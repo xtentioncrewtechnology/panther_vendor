@@ -158,6 +158,31 @@ const startX = ref(0)
 const startWidth = ref(0)
 let currentResizingCol = null
 
+function getColumnWidthPx(col) {
+  const width = props.columnWidths[col.key] || col.width
+  if (width === undefined || width === null || width === '') return 0
+  return typeof width === 'number' ? width : parseInt(width, 10) || 0
+}
+
+function getStickyRightOffset(col) {
+  let offset = 0
+  if (props.hasActions && props.actionsSticky) {
+    offset +=
+      typeof props.actionsWidth === 'number'
+        ? props.actionsWidth
+        : parseInt(props.actionsWidth, 10) || 0
+  }
+  const idx = props.columns.findIndex((c) => c.key === col.key)
+  if (idx === -1) return offset
+  for (let i = idx + 1; i < props.columns.length; i++) {
+    const next = props.columns[i]
+    if (next.sticky === 'right') {
+      offset += getColumnWidthPx(next)
+    }
+  }
+  return offset
+}
+
 function getColumnHeaderStyle(col) {
   const width = props.columnWidths[col.key] || col.width
   const style = {}
@@ -171,14 +196,7 @@ function getColumnHeaderStyle(col) {
     style.maxWidth = typeof col.maxWidth === 'number' ? `${col.maxWidth}px` : col.maxWidth
   }
   if (col.sticky === 'right') {
-    if (props.hasActions && props.actionsSticky) {
-      style.right =
-        typeof props.actionsWidth === 'number'
-          ? `${props.actionsWidth}px`
-          : props.actionsWidth
-    } else {
-      style.right = '0'
-    }
+    style.right = `${getStickyRightOffset(col)}px`
   }
   if (col.sticky === 'left') {
     style.left = '0'

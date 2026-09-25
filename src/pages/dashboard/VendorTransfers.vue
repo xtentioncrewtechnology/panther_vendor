@@ -680,7 +680,7 @@ const columns = [
   { key: "bank", label: "Bank", width: 220 },
   { key: "reference", label: "Reference", width: 180 },
   { key: "payment_status", label: "Payment", width: 120 },
-  { key: "proof", label: "Proof", width: 180 },
+  { key: "proof", label: "Proof", width: 180, sticky: "right" },
   { key: "status", label: "Status", width: 110, sticky: "right" },
 ];
 
