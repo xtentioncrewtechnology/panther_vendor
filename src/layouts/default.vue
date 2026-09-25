@@ -23,7 +23,7 @@ const toggleSidebarCollapsed = () => {
 </script>
 
 <template>
-  <div class="flex h-screen w-full overflow-hidden bg-background text-primary-text">
+  <div class="flex h-screen w-full overflow-hidden bg-background text-primary-text transition-colors duration-200">
     <!-- NavBar Sidebar -->
     <NavBar
       :is-open="sidebarOpen"

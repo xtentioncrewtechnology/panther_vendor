@@ -1,69 +1,129 @@
 @import url("https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&display=swap");
 @import "tailwindcss";
 
+/* Class-based dark mode — controlled via `html.dark` (see utils/theme.js) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Design tokens (Tailwind utilities: bg-background, text-primary-text, …) ─── */
 @theme {
-  /* Core */
-  --color-background: #ffffff;
-  --color-card-background: #ffffff;
+  --color-background: var(--app-background);
+  --color-card-background: var(--app-card-background);
+  --color-surface: var(--app-surface);
 
-  /* Primary */
-  --color-primary: #facc15; /* golden yellow */
-  --color-primary-hover: #eab308;
+  --color-primary: var(--app-primary);
+  --color-primary-hover: var(--app-primary-hover);
 
-  /* Secondary */
-  --color-secondary: #111827;
+  --color-secondary: var(--app-secondary);
 
-  /* Navbar */
-  --color-navbar: #000000;
+  --color-navbar: var(--app-navbar);
+  --color-navbar-text: var(--app-navbar-text);
+  --color-navbar-muted: var(--app-navbar-muted);
+  --color-navbar-hover: var(--app-navbar-hover);
+  --color-navbar-border: var(--app-navbar-border);
 
-  /* Text */
-  --color-primary-text: #111827;
-  --color-secondary-text: #6b7280;
+  --color-primary-text: var(--app-primary-text);
+  --color-secondary-text: var(--app-secondary-text);
 
-  /* Border */
-  --color-primary-border: #e5e7eb;
+  --color-primary-border: var(--app-primary-border);
 
-  /* Accent */
-  --color-accent: #14b8a6;
+  --color-accent: var(--app-accent);
 
-  /* btn colors */
-  --color-btn-text-primary: #111827; /* dark text for yellow button */
+  --color-btn-text-primary: var(--app-btn-text-primary);
 
-  /* Status */
-  --color-primary-green: #22c55e;
-  --color-primary-yellow: #f59e0b;
-  --color-primary-red: #ef4444;
-  --color-primary-blue: #3b82f6;
+  --color-primary-green: var(--app-primary-green);
+  --color-primary-yellow: var(--app-primary-yellow);
+  --color-primary-red: var(--app-primary-red);
+  --color-primary-blue: var(--app-primary-blue);
+
+  --color-topbar: var(--app-topbar);
+  --color-overlay: var(--app-overlay);
 }
 
+/* ─── Light (default) ─────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --app-background: #f3f4f6;
+  --app-card-background: #ffffff;
+  --app-surface: #ffffff;
+
+  --app-primary: #facc15;
+  --app-primary-hover: #eab308;
+
+  --app-secondary: #111827;
+
+  --app-navbar: #0a0a0a;
+  --app-navbar-text: #ffffff;
+  --app-navbar-muted: #9ca3af;
+  --app-navbar-hover: #1a1a1a;
+  --app-navbar-border: #262626;
+
+  --app-primary-text: #111827;
+  --app-secondary-text: #6b7280;
+
+  --app-primary-border: #e5e7eb;
+
+  --app-accent: #14b8a6;
+
+  --app-btn-text-primary: #111827;
+
+  --app-primary-green: #22c55e;
+  --app-primary-yellow: #f59e0b;
+  --app-primary-red: #ef4444;
+  --app-primary-blue: #3b82f6;
+
+  --app-topbar: #ffffff;
+  --app-overlay: rgba(17, 24, 39, 0.45);
+}
+
+/* ─── Dark ────────────────────────────────────────────────────────────── */
 .dark {
-  --color-background: #ffffff;
-  --color-card-background: #f9fafb;
+  color-scheme: dark;
 
-  --color-primary: #facc15;
-  --color-primary-hover: #eab308;
+  --app-background: #0b0f17;
+  --app-card-background: #111827;
+  --app-surface: #1f2937;
 
-  --color-secondary: #111827;
-  --color-navbar: #000000;
+  --app-primary: #facc15;
+  --app-primary-hover: #eab308;
 
-  --color-primary-text: #111827;
-  --color-secondary-text: #4b5563;
+  --app-secondary: #f9fafb;
 
-  /* btn colors */
-  --color-btn-text-primary: #111827;
+  --app-navbar: #030712;
+  --app-navbar-text: #f9fafb;
+  --app-navbar-muted: #9ca3af;
+  --app-navbar-hover: #111827;
+  --app-navbar-border: #1f2937;
 
-  --color-primary-border: #334155;
+  --app-primary-text: #f3f4f6;
+  --app-secondary-text: #9ca3af;
 
-  --color-accent: #14b8a6;
+  --app-primary-border: #374151;
 
-  --color-primary-green: #22c55e;
-  --color-primary-yellow: #f59e0b;
-  --color-primary-red: #ef4444;
-  --color-primary-blue: #60a5fa;
+  --app-accent: #2dd4bf;
+
+  --app-btn-text-primary: #111827;
+
+  --app-primary-green: #4ade80;
+  --app-primary-yellow: #fbbf24;
+  --app-primary-red: #f87171;
+  --app-primary-blue: #60a5fa;
+
+  --app-topbar: #111827;
+  --app-overlay: rgba(0, 0, 0, 0.6);
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  background-color: var(--app-background);
+  color: var(--app-primary-text);
 }
 
 body {
   font-family: "Red Hat Display", sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .title-text {
@@ -83,29 +143,27 @@ body {
 }
 
 .input-field {
-  @apply w-full border border-primary-border rounded-lg bg-background text-primary-text text-sm placeholder-secondary-text/50 outline-none transition-all duration-150;
+  @apply w-full border border-primary-border rounded-lg bg-card-background text-primary-text text-sm placeholder-secondary-text/50 outline-none transition-all duration-150;
 }
 
 .input-field:focus {
   outline: none;
-  box-shadow: none; /* remove glow */
-  border-color: var(--color-primary); /* optional */
+  box-shadow: none;
+  border-color: var(--color-primary);
 }
 
 /* Glass-morphism card */
 .glass-card {
-  @apply bg-white/80 dark:bg-card-background/80 backdrop-blur-sm border border-gray-200 dark:border-primary-border shadow-md rounded-2xl p-5;
+  @apply bg-card-background/80 backdrop-blur-sm border border-primary-border shadow-md rounded-2xl p-5;
 }
 
 /* ─── Hide Number Input Spinners Globally ────────────────────────────── */
-/* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-/* Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
@@ -139,7 +197,6 @@ input[type="number"] {
   background: rgba(148, 163, 184, 0.6);
 }
 
-/* Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
@@ -150,12 +207,12 @@ input[type="number"] {
 }
 
 .no-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+  display: none;
 }
 
 .no-scrollbar {
-  -ms-overflow-style: none; /* IE & old Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Child row styling for tree hierarchy visualization */
@@ -183,8 +240,8 @@ input[type="checkbox"],
   width: 17px;
   height: 17px;
   border-radius: 5px;
-  border: 1.5px solid #cbd5e1;
-  background-color: #ffffff;
+  border: 1.5px solid var(--app-primary-border);
+  background-color: var(--app-card-background);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -198,46 +255,24 @@ input[type="checkbox"],
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.dark input[type="checkbox"],
-.dark .custom-checkbox {
-  border: 1.5px solid #475569;
-  background-color: #1e293b;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
 input[type="checkbox"]:hover,
 .custom-checkbox:hover {
   border-color: var(--color-primary);
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(2, 26, 108, 0.1);
-}
-
-.dark input[type="checkbox"]:hover,
-.dark .custom-checkbox:hover {
-  border-color: var(--color-primary);
-  background-color: #1e293b;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
 }
 
 input[type="checkbox"]:focus-visible,
 .custom-checkbox:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(2, 26, 108, 0.18);
-}
-
-.dark input[type="checkbox"]:focus-visible,
-.dark .custom-checkbox:focus-visible {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
 }
 
 input[type="checkbox"]:checked,
 .custom-checkbox:checked {
   background-color: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2.5-2.5a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23111827' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2.5-2.5a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E") !important;
   background-size: 100% 100% !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
@@ -248,7 +283,7 @@ input[type="checkbox"]:indeterminate,
 .custom-checkbox:indeterminate {
   background-color: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M3.5 8a1 1 0 011-1h7a1 1 0 110 2h-7a1 1 0 01-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23111827' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M3.5 8a1 1 0 011-1h7a1 1 0 110 2h-7a1 1 0 01-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
   background-size: 100% 100% !important;
   background-position: center !important;
   background-repeat: no-repeat !important;

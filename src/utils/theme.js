@@ -1,41 +1,44 @@
-const THEME_KEY = 'theme'
+const THEME_KEY = "theme";
+const THEMES = ["light", "dark"];
+
+const applyDomTheme = (theme) => {
+  const html = document.documentElement;
+  const resolved = THEMES.includes(theme) ? theme : "light";
+
+  html.classList.toggle("dark", resolved === "dark");
+  html.dataset.theme = resolved;
+  html.style.colorScheme = resolved;
+};
 
 export const setTheme = (theme) => {
-  const html = document.documentElement
-
-  if (theme === 'dark') {
-    html.classList.add('dark')
-  } else {
-    html.classList.remove('dark')
-  }
-
-  localStorage.setItem(THEME_KEY, theme)
-}
+  const resolved = THEMES.includes(theme) ? theme : "light";
+  applyDomTheme(resolved);
+  localStorage.setItem(THEME_KEY, resolved);
+  return resolved;
+};
 
 export const getTheme = () => {
-  return localStorage.getItem(THEME_KEY)
-}
+  const saved = localStorage.getItem(THEME_KEY);
+  return THEMES.includes(saved) ? saved : null;
+};
+
+export const getSystemTheme = () => {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+};
 
 export const initTheme = () => {
-  const savedTheme = getTheme()
-
-  if (savedTheme) {
-    setTheme(savedTheme)
-    return savedTheme
-  }
-
-  // system preference
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const defaultTheme = prefersDark ? 'dark' : 'light'
-
-  setTheme(defaultTheme)
-  return defaultTheme
-}
+  const savedTheme = getTheme();
+  const theme = savedTheme || getSystemTheme();
+  return setTheme(theme);
+};
 
 export const toggleTheme = () => {
-  const current = getTheme()
-  const newTheme = current === 'dark' ? 'light' : 'dark'
+  const current = getTheme() || getSystemTheme();
+  const next = current === "dark" ? "light" : "dark";
+  return setTheme(next);
+};
 
-  setTheme(newTheme)
-  return newTheme
-}
+export { THEME_KEY, THEMES };
