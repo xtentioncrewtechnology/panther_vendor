@@ -3,7 +3,7 @@ import { ref, watch, onBeforeUnmount } from "vue";
 import NavBar from "@/components/default/NavBar.vue";
 import TopBar from "@/components/default/TopBar.vue";
 
-const SIDEBAR_COLLAPSED_KEY = "panther_sidebar_collapsed";
+const SIDEBAR_COLLAPSED_KEY = "vendor_sidebar_collapsed";
 const storedSidebarCollapsed =
   typeof window !== "undefined"
     ? localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "true"

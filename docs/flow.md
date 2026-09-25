@@ -5,7 +5,7 @@
 ```mermaid
 sequenceDiagram
   participant User as Client / IB / FM
-  participant API as panther-trade
+  participant API as BackendAPI
   participant Admin as Admin staff
   participant Vendor as Vendor UI
 

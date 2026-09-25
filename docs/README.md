@@ -12,8 +12,8 @@ Guide for the **Vendor Queue** product: staff who manually pay out **bank-transf
 
 | Piece | Path |
 |-------|------|
-| Vendor UI | `panther_vendor_frontend/` |
-| Vendor backend package | `panther-trade/app/payments/vendor/` |
-| Backend docs | `panther-trade/docs/vendor/` |
+| Vendor UI | This frontend package (`src/`) |
+| Vendor backend package | Backend `app/payments/vendor/` |
+| Backend docs | Backend `docs/vendor/` |
 
 Vendor does **not** create withdrawals. It only completes bank-transfer payouts that are already in `processing`. Crypto / Paymaxis are out of scope.

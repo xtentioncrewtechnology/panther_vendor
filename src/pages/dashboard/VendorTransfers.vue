@@ -734,7 +734,12 @@ const getApiOrigin = () => {
   if (customUrl) {
     return customUrl.endsWith("/") ? customUrl.slice(0, -1) : customUrl;
   }
-  return "https://admin.panthercapitals.com";
+  const fromEnv = import.meta.env.VITE_API_HOST;
+  if (fromEnv) return String(fromEnv).replace(/\/$/, "");
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+  return "";
 };
 
 /** Resolve relative proof paths to a fetchable absolute URL. */

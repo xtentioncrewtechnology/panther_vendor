@@ -10,8 +10,8 @@
       class="p-4 font-bold text-xl mb-4 border-b border-navbar-border tracking-tight"
       :class="railCollapsed ? 'lg:text-center' : ''"
     >
-      <span v-if="!railCollapsed">Admin Logo</span>
-      <span v-else class="text-primary">AL</span>
+      <span v-if="!railCollapsed">Vendor</span>
+      <span v-else class="text-primary">V</span>
     </div>
 
     <div class="flex flex-col px-2 gap-1.5 flex-1 overflow-y-auto no-scrollbar">

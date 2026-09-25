@@ -1,6 +1,6 @@
-# Panther Capital Admin - Frontend Engineering Rules & Architecture Standards
+# Vendor Portal - Frontend Engineering Rules & Architecture Standards
 
-> **Scope**: This document defines the universal architectural standards, store conventions, component guidelines, styling rules, shared component usage, and folder structure for all modules across the Panther Capital Admin Frontend application. Every new module (e.g., Commission Engine, Loyalty, Settlements, etc.) **must** adhere strictly to these rules.
+> **Scope**: This document defines the universal architectural standards, store conventions, component guidelines, styling rules, shared component usage, and folder structure for all modules across the Vendor Portal frontend application. Every new module (e.g., Commission Engine, Loyalty, Settlements, etc.) **must** adhere strictly to these rules.
 
 ---
 

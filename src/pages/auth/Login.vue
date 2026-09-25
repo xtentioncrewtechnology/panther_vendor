@@ -176,7 +176,7 @@ const handleLogin = () => {
         
         <div class="mt-8 text-center">
           <p class="text-xs text-gray-500">
-            Secure admin portal for Panther Capitals
+            Secure staff portal for vendor operations
           </p>
         </div>
       </div>

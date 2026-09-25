@@ -17,15 +17,15 @@ There is **no** second admin final-approve. Vendor submit closes the withdrawal.
 |-------|-----|-------------------|-----|
 | Client / IB / FM | Portal | Own wallet JWT | Creates bank-transfer withdrawal; **funds debited immediately**; PR stays `pending` |
 | Admin | Main admin | `payment_requests.approve` / `reject` | First-approve → `processing` + vendor row; or reject + reverse funds |
-| Vendor | **This app** (`panther_vendor_frontend`) | Staff + RBAC role **Vendor** (`vendor.view`, `vendor.submit`) | Pays user’s bank, uploads proof + UTR URL, submit or reject |
+| Vendor | **This app** (Vendor Portal UI) | Staff + RBAC role **Vendor** (`vendor.view`, `vendor.submit`) | Pays user’s bank, uploads proof + UTR URL, submit or reject |
 
 Vendor staff use the **same admin login** (`POST /admin/login`). `User.role` stays `staff`; access is via RBAC role **Vendor**.
 
 ## Apps in this workspace
 
 ```text
-panther_vendor_frontend     Vendor Queue UI (Vue 3 + Vite)
-panther-trade               Flask API (vendor_bp under /admin/vendor)
+vendor-portal (this package)   Vendor Queue UI (Vue 3 + Vite)
+backend API                    Flask API (vendor_bp under /admin/vendor)
 ```
 
 | Frontend route | Page |
@@ -37,7 +37,7 @@ panther-trade               Flask API (vendor_bp under /admin/vendor)
 | `/vendor/transfers` | **Vendor Queue** (main feature) |
 
 API base (axios): `{host}/admin/`  
-Default host: `https://admin.panthercapitals.com`  
+Default host: set via Dev Login (`localStorage.custom_base_url`) or `VITE_API_HOST`  
 Override: `localStorage.custom_base_url` (set from Dev Login).
 
 ## Auth

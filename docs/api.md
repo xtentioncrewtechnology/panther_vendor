@@ -370,7 +370,7 @@ Also related:
 
 ## E. API map (frontend → backend)
 
-What `panther_vendor_frontend` actually calls today (`src/api/urls.js`):
+What this frontend calls today (`src/api/urls.js`):
 
 | UI action | Method | Path under `/admin` |
 |-----------|--------|---------------------|
@@ -389,14 +389,14 @@ Declared in `urls.js` but **unused** in this app: `admins`, `wallet`, `plans`, `
 
 | Piece | Path |
 |-------|------|
-| Vendor routes | `panther-trade/app/payments/vendor/routes.py` |
-| Vendor service | `panther-trade/app/payments/vendor/service.py` |
-| Vendor model | `panther-trade/app/payments/vendor/models.py` (`VendorTransfer`) |
-| Constants / proof limits | `panther-trade/app/payments/vendor/constants.py` |
-| RBAC seed | `panther-trade/app/payments/vendor/schema.py` |
-| First-approve hook | `panther-trade/app/routes/admin_payment_request.py` |
-| Bank-transfer create | `panther-trade/app/payments/bank_transfer/` |
-| Vendor Queue UI | `panther_vendor_frontend/src/pages/dashboard/VendorTransfers.vue` |
-| API client | `panther_vendor_frontend/src/api/request.js`, `urls.js` |
+| Vendor routes | Backend `app/payments/vendor/routes.py` |
+| Vendor service | Backend `app/payments/vendor/service.py` |
+| Vendor model | Backend `app/payments/vendor/models.py` (`VendorTransfer`) |
+| Constants / proof limits | Backend `app/payments/vendor/constants.py` |
+| RBAC seed | Backend `app/payments/vendor/schema.py` |
+| First-approve hook | Backend `app/routes/admin_payment_request.py` |
+| Bank-transfer create | Backend `app/payments/bank_transfer/` |
+| Vendor Queue UI | `src/pages/dashboard/VendorTransfers.vue` |
+| API client | `src/api/request.js`, `urls.js` |
 
-Backend companion: `panther-trade/docs/vendoor.md`
+Backend companion: backend `docs/vendor/`

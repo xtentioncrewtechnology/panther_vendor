@@ -4,13 +4,19 @@ import router from "../router";
 
 // ─── Constants
 
+const getDefaultApiHost = () => {
+  const fromEnv = import.meta.env.VITE_API_HOST;
+  if (fromEnv) return String(fromEnv).replace(/\/$/, "");
+  return "";
+};
+
 const getBaseURL = () => {
-  const customUrl = localStorage.getItem("custom_base_url");
+  const customUrl = localStorage.getItem("custom_base_url") || getDefaultApiHost();
   if (customUrl) {
     const base = customUrl.endsWith("/") ? customUrl.slice(0, -1) : customUrl;
     return `${base}/admin/`;
   }
-  return `https://admin.panthercapitals.com/admin/`;
+  return "/admin/";
 };
 
 const DEFAULT_TIMEOUT = 2 * 60 * 1000;
