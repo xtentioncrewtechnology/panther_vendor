@@ -33,6 +33,22 @@
             @update:modelValue="fetchTransfers"
           />
         </div>
+        <button
+          type="button"
+          @click="fetchTransfers"
+          :disabled="loading"
+          class="inline-flex items-center justify-center gap-2 rounded-xl border border-primary-border bg-card-background px-3.5 py-2.5 text-sm font-semibold text-primary-text hover:bg-background transition-colors disabled:opacity-50 cursor-pointer shrink-0"
+          title="Refresh list"
+          aria-label="Refresh list"
+        >
+          <span
+            class="material-symbols-outlined text-[18px]"
+            :class="loading ? 'animate-spin' : ''"
+          >
+            refresh
+          </span>
+          <span class="sm:inline">Refresh</span>
+        </button>
       </div>
     </div>
 
