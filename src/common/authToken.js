@@ -10,8 +10,9 @@ const authToken = {
     };
   },
   removeToken: () => {
-    // clear local store
-    localStorage.clear();
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user_id");
   },
 };
 export default authToken;

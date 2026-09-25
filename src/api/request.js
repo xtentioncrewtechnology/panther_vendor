@@ -83,11 +83,20 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // ── 401: logout (no refresh)
+    // ── 401: clear session and send to login
     if (error.response?.status === 401) {
       authToken.removeToken();
-      localStorage.removeItem('role')
-      router.push({ name: "login" });
+      localStorage.removeItem("role");
+      localStorage.removeItem("user_id");
+
+      const onAuthPage = router.currentRoute.value.path.startsWith("/auth");
+      if (!onAuthPage) {
+        router
+          .push({ name: "Login", query: { redirect: router.currentRoute.value.fullPath } })
+          .catch(() => {
+            window.location.href = "/auth/login";
+          });
+      }
       return Promise.reject(error);
     }
 

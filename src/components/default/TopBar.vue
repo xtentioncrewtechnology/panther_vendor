@@ -2,7 +2,7 @@
   <header
     class="bg-topbar border-b border-primary-border h-16 flex items-center justify-between px-4 lg:px-6 relative z-10 shadow-sm"
   >
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-3 min-w-0">
       <button
         type="button"
         @click="$emit('toggle-sidebar')"
@@ -11,7 +11,9 @@
       >
         <span class="material-symbols-outlined">menu</span>
       </button>
-      <span class="text-sm text-primary-text font-semibold">Admin User</span>
+      <span class="text-sm text-primary-text font-semibold truncate">
+        {{ profile.displayName }}
+      </span>
     </div>
 
     <div class="flex items-center gap-2">
@@ -35,8 +37,10 @@
 
 <script setup>
 import { useThemeStore } from "@/stores/theme/theme";
+import { useProfileStore } from "@/stores/profile/profile";
 
 defineEmits(["toggle-sidebar"]);
 
 const themeStore = useThemeStore();
+const profile = useProfileStore();
 </script>

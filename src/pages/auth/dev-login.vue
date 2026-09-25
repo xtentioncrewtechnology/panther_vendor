@@ -110,7 +110,7 @@ const handleLogin = () => {
     }
     loading.value = false;
     snackbar.show("Connected to target host successfully.", "success");
-    const targetPath = myPermissionsStore.firstAllowedPath || "/dashboard";
+    const targetPath = myPermissionsStore.firstAllowedPath || "/vendor/transfers";
     router.push(targetPath).catch(() => {
       window.location.href = targetPath;
     });

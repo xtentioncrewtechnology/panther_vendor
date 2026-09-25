@@ -29,7 +29,7 @@
           getColumnAlignClass(col),
           col.sortable ? 'cursor-pointer hover:text-primary-text hover:bg-background/60' : '',
           col.sticky === 'left' ? 'sticky left-0 z-25 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
-          col.sticky === 'right' ? 'sticky right-0 z-25 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
+          col.sticky === 'right' ? 'sticky z-25 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
           col.headerClass || '',
         ]"
         @click="handleHeaderClick(col)"
@@ -69,7 +69,7 @@
         v-if="hasActions"
         :style="actionsColumnStyle"
         class="px-4 py-3 text-right border-b border-primary-border bg-card-background shrink-0"
-        :class="actionsSticky ? 'sticky right-0 z-25 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]' : ''"
+        :class="actionsSticky ? 'sticky right-0 z-30 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]' : ''"
       >
         <div class="flex items-center justify-end gap-1.5">
           <span>Actions</span>
@@ -169,6 +169,19 @@ function getColumnHeaderStyle(col) {
   }
   if (col.maxWidth) {
     style.maxWidth = typeof col.maxWidth === 'number' ? `${col.maxWidth}px` : col.maxWidth
+  }
+  if (col.sticky === 'right') {
+    if (props.hasActions && props.actionsSticky) {
+      style.right =
+        typeof props.actionsWidth === 'number'
+          ? `${props.actionsWidth}px`
+          : props.actionsWidth
+    } else {
+      style.right = '0'
+    }
+  }
+  if (col.sticky === 'left') {
+    style.left = '0'
   }
   return style
 }

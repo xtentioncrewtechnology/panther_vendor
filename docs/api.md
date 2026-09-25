@@ -1,0 +1,402 @@
+# Vendor — API reference
+
+**Auth (all routes below unless noted):**
+
+```http
+Authorization: Bearer <jwt_access_token>
+Content-Type: application/json   # or multipart/form-data where noted
+```
+
+**Base URLs**
+
+| Surface | Prefix |
+|---------|--------|
+| Staff / vendor APIs | `/admin/...` |
+| Client wallet | `/client/wallet/...` |
+| FM wallet | `/fm/wallet/...` |
+| IB wallet | `/ib/wallet/...` |
+
+Vendor frontend axios base = `{host}/admin/` (paths below are shown as full paths).
+
+Error envelope:
+
+```json
+{ "status": "error", "message": "Human readable reason" }
+```
+
+Common codes: `400` validation/state, `401` auth, `403` permission, `404` not found, `500` unexpected.
+
+---
+
+## A. Auth & profile (vendor frontend)
+
+### A1. Login
+
+`POST /admin/login`  
+Used by: Login, Dev Login
+
+**Body**
+
+```json
+{
+  "email": "vendor@example.com",
+  "password": "••••••••"
+}
+```
+
+**Success:** JWT access token (store as Bearer). Staff user should have RBAC role **Vendor**.
+
+---
+
+### A2. Profile
+
+`GET /admin/profile`  
+Used by: Profile page, NavBar
+
+**Success:** staff profile payload (name, email, etc.).
+
+---
+
+## B. Vendor queue (`/admin/vendor`)
+
+Blueprint: `vendor_bp` → `app/payments/vendor/routes.py`
+
+### Shared payload: `VendorTransfer`
+
+Returned in `data` for list / get / patch / submit / reject:
+
+```json
+{
+  "id": 12,
+  "payment_request_id": 455,
+  "status": "assigned",
+  "assigned_to": null,
+  "proof_attachment": "vendor_transfers/12/3/xxx.pdf",
+  "proof_attachment_url": "https://cdn.example.com/vendor_transfers/12/3/xxx.pdf",
+  "proof_url": "https://bank.example/utr/123",
+  "vendor_note": "Sent via IMPS",
+  "submitted_by": null,
+  "submitted_at": null,
+  "created_at": "2026-09-25T07:30:00",
+  "updated_at": "2026-09-25T07:31:00",
+  "payment_request": {
+    "id": 455,
+    "type": "withdrawal",
+    "gateway": "bank_transfer",
+    "method": "Bank Transaction",
+    "approval_status": "processing",
+    "payment_status": "paid",
+    "amount": 10.0,
+    "currency": "USD",
+    "paid_amount": 850.0,
+    "paid_currency": "INR",
+    "user_id": 88,
+    "user_email": "user@example.com",
+    "user_name": "Jane Doe",
+    "trading_account_id": 101,
+    "trading_account_number": "5012345",
+    "fm_wallet_id": null,
+    "ib_wallet_id": null,
+    "reference_id": "uuid-...",
+    "bank": {
+      "account_number": "1234567890",
+      "account_name": "Jane Doe",
+      "account_type": "savings",
+      "bank": "HDFC",
+      "bank_branch_code": "HDFC0001234",
+      "user_bank_account_id": 7,
+      "deposit_proof_url": null
+    },
+    "created_at": "2026-09-25T07:00:00"
+  }
+}
+```
+
+Use transfer **`id`** on vendor routes (not payment request id).  
+`proof_attachment_url` = uploaded file CDN URL.  
+`proof_url` = vendor UTR / remittance link.
+
+Proof file rules: `png` / `jpg` / `jpeg` / `gif` / `webp` / `pdf`, max **10 MB**.
+
+---
+
+### B1. List transfers
+
+`GET /admin/vendor/transfers`  
+Permission: `vendor.view`  
+Used by: Vendor Queue page
+
+| Query | Type | Notes |
+|-------|------|--------|
+| `status` | string | `assigned` / `completed` / `cancelled` |
+| `page` | int | default `1` |
+| `per_page` | int | default `20`, max `100` |
+
+**Success `200`**
+
+```json
+{
+  "status": "success",
+  "data": [ /* VendorTransfer[] */ ],
+  "pagination": { "page": 1, "per_page": 20, "total": 0 }
+}
+```
+
+---
+
+### B2. Get one transfer
+
+`GET /admin/vendor/transfers/<transfer_id>`  
+Permission: `vendor.view`
+
+**Success `200`:** `{ "status": "success", "data": { /* VendorTransfer */ } }`  
+**Not found `404`:** `{ "status": "error", "message": "Vendor transfer not found" }`
+
+---
+
+### B3. Update transfer (draft — does **not** complete)
+
+`PATCH /admin/vendor/transfers/<transfer_id>`  
+Permission: `vendor.submit`  
+Used by: Save Draft  
+Only while transfer `assigned` and PR `processing`.
+
+Multipart **or** JSON. At least one field required.
+
+| Field | Notes |
+|-------|--------|
+| `proof` | file |
+| `proof_url` or `url` | remittance / UTR link |
+| `vendor_note` or `note` | empty string clears |
+| `assigned_to` | staff user id; `0` / empty clears |
+
+**JSON example**
+
+```json
+{
+  "proof_url": "https://bank.example/utr/123",
+  "vendor_note": "IMPS done",
+  "assigned_to": 42
+}
+```
+
+**Success `200`**
+
+```json
+{
+  "status": "success",
+  "message": "Vendor transfer updated",
+  "data": { }
+}
+```
+
+---
+
+### B4. Submit (completes withdrawal)
+
+`POST /admin/vendor/transfers/<transfer_id>/submit`  
+Permission: `vendor.submit`  
+`Content-Type: multipart/form-data`  
+Used by: Complete Transfer
+
+| Field | Required | Notes |
+|-------|----------|--------|
+| `proof` | yes* | *or already saved via PATCH |
+| `proof_url` or `url` | yes* | *or already saved via PATCH |
+| `vendor_note` or `note` | no | optional |
+
+**Effects**
+
+- `VendorTransfer.status` → `completed`
+- `submitted_by` / `submitted_at` set
+- PR `approval_status` → `approved`
+- PR `payment_status` → `completed`
+- `approved_by` = vendor user id
+
+**Success `200`**
+
+```json
+{
+  "status": "success",
+  "message": "Vendor transfer submitted and withdrawal completed",
+  "data": {
+    "status": "completed",
+    "payment_request": {
+      "approval_status": "approved",
+      "payment_status": "completed"
+    }
+  }
+}
+```
+
+---
+
+### B5. Reject while processing
+
+`POST /admin/vendor/transfers/<transfer_id>/reject`  
+Permission: `payment_requests.reject` (not `vendor.submit`)  
+Used by: Reject action in Vendor Queue
+
+**Body** (JSON or form)
+
+```json
+{ "rejection_reason": "Wrong bank details" }
+```
+
+Aliases: `reason`. Default: `"Rejected by admin"`.
+
+**Effects:** transfer `cancelled`; PR `rejected`; funds reversed to trading account / FM / IB wallet.
+
+**Success `200`**
+
+```json
+{
+  "status": "success",
+  "message": "Vendor transfer rejected and funds reversed",
+  "data": { }
+}
+```
+
+---
+
+## C. Admin payment-request hooks (create / cancel vendor jobs)
+
+Not built into the vendor Vue app (main admin uses these). Required for the flow to start.
+
+### C1. First approve → creates vendor row
+
+`POST /admin/payment-requests/approve/<req_id>`  
+Permission: `payment_requests.approve`  
+Optional multipart: `admin_document_proof`
+
+**Bank-transfer withdrawal only:**
+
+- Creates `VendorTransfer` (`status=assigned`)
+- Sets PR `approval_status=processing` (funds stay debited)
+- Message: `"Payment request sent to vendor for processing"`
+
+Other gateways still go straight to `approved` (no vendor row).
+
+**Success `200` (bank transfer)**
+
+```json
+{
+  "status": "success",
+  "message": "Payment request sent to vendor for processing",
+  "data": {
+    "id": 455,
+    "approval_status": "processing",
+    "payment_status": "paid"
+  }
+}
+```
+
+---
+
+### C2. Reject payment request
+
+`POST /admin/payment-requests/reject/<req_id>`  
+Permission: `payment_requests.reject`
+
+Works for:
+
+- `pending` bank-transfer withdrawals
+- `processing` bank-transfer withdrawals (cancels vendor row + reverses funds)
+
+---
+
+### C3. Adjust amount (related ops)
+
+`PATCH /admin/payment-requests/<req_id>/amount`  
+Permission: `payment_requests.approve`  
+Adjust INR/USD on **pending** bank-transfer PR (before vendor).
+
+---
+
+## D. Upstream create withdrawal (not vendor UI)
+
+These create the `PaymentRequest` that later becomes a vendor job after admin approve.
+
+### D1. Withdrawal OTP (example: IB)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/ib/wallet/withdraw/request` | Request OTP (stores OTP in Redis) |
+| `PUT` | `/ib/wallet/withdraw/verify` | Verify OTP |
+
+Same pattern exists for client and FM:
+
+- `/client/wallet/withdraw/request` · `/client/wallet/withdraw/verify`
+- `/fm/wallet/withdraw/request` · `/fm/wallet/withdraw/verify`
+
+---
+
+### D2. Create bank-transfer withdrawal
+
+| Audience | Method | Path |
+|----------|--------|------|
+| Client | `POST` | `/client/wallet/create-bank-transfer-withdrawal` |
+| FM | `POST` | `/fm/wallet/create-bank-transfer-withdrawal` |
+| IB | `POST` | `/ib/wallet/create-bank-transfer-withdrawal` |
+
+**Typical body**
+
+```json
+{
+  "trading_account_id": 1039,
+  "payment_method_id": 58,
+  "amount": 25,
+  "payment_method_code": "bank_transfer",
+  "currency": "INR",
+  "user_bank_account_id": 2
+}
+```
+
+Notes:
+
+- Client path usually needs `trading_account_id`.
+- FM / IB paths debit commission / IB wallet (no trading account required for IB wallet flow).
+- Amount is debited on create; PR starts `pending` / `paid`.
+- Payout currency for bank transfer is **INR**.
+
+Also related:
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `…/payment-methods?type=withdrawal` | List methods (client / fm / ib) |
+| `GET` | `/client/payment-requests?type=withdrawal` | Client history — treat `processing` as in-flight |
+
+---
+
+## E. API map (frontend → backend)
+
+What `panther_vendor_frontend` actually calls today (`src/api/urls.js`):
+
+| UI action | Method | Path under `/admin` |
+|-----------|--------|---------------------|
+| Login | `POST` | `/login` |
+| Profile | `GET` | `/profile` |
+| Queue list | `GET` | `/vendor/transfers` |
+| Save draft | `PATCH` | `/vendor/transfers/:id` |
+| Complete | `POST` | `/vendor/transfers/:id/submit` |
+| Reject | `POST` | `/vendor/transfers/:id/reject` |
+
+Declared in `urls.js` but **unused** in this app: `admins`, `wallet`, `plans`, `paymentRequests`.
+
+---
+
+## F. Code locations
+
+| Piece | Path |
+|-------|------|
+| Vendor routes | `panther-trade/app/payments/vendor/routes.py` |
+| Vendor service | `panther-trade/app/payments/vendor/service.py` |
+| Vendor model | `panther-trade/app/payments/vendor/models.py` (`VendorTransfer`) |
+| Constants / proof limits | `panther-trade/app/payments/vendor/constants.py` |
+| RBAC seed | `panther-trade/app/payments/vendor/schema.py` |
+| First-approve hook | `panther-trade/app/routes/admin_payment_request.py` |
+| Bank-transfer create | `panther-trade/app/payments/bank_transfer/` |
+| Vendor Queue UI | `panther_vendor_frontend/src/pages/dashboard/VendorTransfers.vue` |
+| API client | `panther_vendor_frontend/src/api/request.js`, `urls.js` |
+
+Backend companion: `panther-trade/docs/vendoor.md`

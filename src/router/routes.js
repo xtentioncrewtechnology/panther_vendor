@@ -5,11 +5,17 @@ const routes = [
   {
     path: "/",
     component: DefaultLayout,
+    meta: { requiresAuth: true },
     children: [
       {
         path: "dashboard",
         name: "Dashboard",
         component: () => import("@/pages/dashboard/Dashboard.vue"),
+      },
+      {
+        path: "profile",
+        name: "Profile",
+        component: () => import("@/pages/dashboard/Profile.vue"),
       },
       {
         path: "vendor/transfers",
@@ -18,13 +24,14 @@ const routes = [
       },
       {
         path: "",
-        redirect: "/dashboard",
+        redirect: "/vendor/transfers",
       },
     ],
   },
   {
     path: "/auth",
     component: AuthLayout,
+    meta: { requiresAuth: false },
     children: [
       {
         path: "login",

@@ -7,6 +7,7 @@ const urls = {
   },
   auth: {
     login: '/login',
+    profile: '/profile',
   },
   admins: {
     list: '/superadmin/admins',

@@ -1,12 +1,12 @@
 <template>
   <div
-    v-if="pagination && (pagination.total_items !== undefined || pagination.total_pages !== undefined)"
-    class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-primary-border bg-card-background text-xs"
+    v-if="pagination && totalItems > 0 && (pagination.total_items !== undefined || pagination.total !== undefined || pagination.total_pages !== undefined)"
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3 px-3 py-2.5 sm:px-4 sm:py-3 border-t border-primary-border bg-card-background text-xs"
   >
     <!-- Left: Showing range & Rows per page -->
-    <div class="flex flex-wrap items-center gap-4 text-secondary-text">
+    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-2 w-full sm:w-auto text-secondary-text">
       <!-- Showing summary -->
-      <span class="whitespace-nowrap">
+      <span class="whitespace-nowrap text-center sm:text-left">
         Showing
         <span class="font-semibold text-primary-text">{{ showingFrom }}</span>
         to
@@ -18,7 +18,10 @@
 
       <!-- Rows per page selector -->
       <div v-if="perPageOptions && perPageOptions.length" class="flex items-center gap-2">
-        <span class="text-secondary-text whitespace-nowrap">Rows per page:</span>
+        <span class="text-secondary-text whitespace-nowrap">
+          <span class="sm:hidden">Rows:</span>
+          <span class="hidden sm:inline">Rows per page:</span>
+        </span>
         <div class="w-20">
           <BaseSelect
             :model-value="currentPerPage"
@@ -33,10 +36,10 @@
     </div>
 
     <!-- Right: Page buttons & Jump to page -->
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
       <!-- Jump to Page -->
-      <div v-if="totalPages > 1" class="flex items-center gap-1.5 relative">
-        <span class="text-secondary-text whitespace-nowrap">Jump to:</span>
+      <div class="flex items-center gap-1.5 relative">
+        <span class="hidden sm:inline text-secondary-text whitespace-nowrap">Jump to:</span>
         <div class="relative flex items-center">
           <input
             v-model="jumpPageInput"
@@ -70,7 +73,7 @@
       </div>
 
       <!-- Page navigation buttons -->
-      <div v-if="totalPages > 1" class="flex items-center gap-1">
+      <div class="flex items-center gap-0.5 sm:gap-1">
         <!-- First Page -->
         <button
           type="button"
@@ -80,7 +83,7 @@
           class="w-7 h-7 flex items-center justify-center rounded-lg border border-primary-border transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :class="isFirst ? 'bg-background text-secondary-text' : 'bg-background text-secondary-text hover:text-primary-text hover:border-primary'"
         >
-          <ChevronsLeft class="w-3.5 h-3.5" />
+          <span class="material-symbols-outlined text-[16px] leading-none">keyboard_double_arrow_left</span>
         </button>
 
         <!-- Previous Page -->
@@ -92,7 +95,7 @@
           class="w-7 h-7 flex items-center justify-center rounded-lg border border-primary-border transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :class="isFirst ? 'bg-background text-secondary-text' : 'bg-background text-secondary-text hover:text-primary-text hover:border-primary'"
         >
-          <span class="material-symbols-outlined w-3.5 h-3.5">chevron_left</span>
+          <span class="material-symbols-outlined text-[16px] leading-none">chevron_left</span>
         </button>
 
         <!-- Page Numbers with Ellipsis -->
@@ -126,7 +129,7 @@
           class="w-7 h-7 flex items-center justify-center rounded-lg border border-primary-border transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :class="isLast ? 'bg-background text-secondary-text' : 'bg-background text-secondary-text hover:text-primary-text hover:border-primary'"
         >
-          <span class="material-symbols-outlined w-3.5 h-3.5">chevron_right</span>
+          <span class="material-symbols-outlined text-[16px] leading-none">chevron_right</span>
         </button>
 
         <!-- Last Page -->
@@ -138,7 +141,7 @@
           class="w-7 h-7 flex items-center justify-center rounded-lg border border-primary-border transition disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
           :class="isLast ? 'bg-background text-secondary-text' : 'bg-background text-secondary-text hover:text-primary-text hover:border-primary'"
         >
-          <ChevronsRight class="w-3.5 h-3.5" />
+          <span class="material-symbols-outlined text-[16px] leading-none">keyboard_double_arrow_right</span>
         </button>
       </div>
     </div>
@@ -153,7 +156,7 @@ const props = defineProps({
   pagination: {
     type: Object,
     required: true,
-    default: () => ({ page: 1, per_page: 10, total_items: 0, total_pages: 1 }),
+    default: () => ({ page: 1, per_page: 10, total_items: 0, total: 0, total_pages: 1 }),
   },
   perPageOptions: {
     type: Array,
@@ -184,7 +187,10 @@ const formattedPerPageOptions = computed(() => {
 
 const currentPage = computed(() => Number(props.pagination?.page) || 1)
 const currentPerPage = computed(() => Number(props.pagination?.per_page) || 10)
-const totalItems = computed(() => Number(props.pagination?.total_items) || 0)
+const totalItems = computed(() => {
+  const raw = props.pagination?.total_items ?? props.pagination?.total
+  return Number(raw) || 0
+})
 const totalPages = computed(() => {
   if (props.pagination?.total_pages !== undefined) {
     return Math.max(1, Number(props.pagination.total_pages))

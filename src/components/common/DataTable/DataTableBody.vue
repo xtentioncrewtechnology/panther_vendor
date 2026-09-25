@@ -20,7 +20,7 @@
           :class="[
             getColumnAlignClass(col),
             col.sticky === 'left' ? 'sticky left-0 bg-card-background z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
-            col.sticky === 'right' ? 'sticky right-0 bg-card-background z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
+            col.sticky === 'right' ? 'sticky bg-card-background z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
           ]"
           :style="getColumnCellStyle(col)"
         >
@@ -37,7 +37,7 @@
         <td
           v-if="hasActions"
           class="px-4 py-3.5 text-right"
-          :class="actionsSticky ? 'sticky right-0 bg-card-background z-10' : ''"
+          :class="actionsSticky ? 'sticky right-0 bg-card-background z-20' : ''"
           :style="actionsColumnStyle"
         >
           <div class="flex justify-end">
@@ -52,19 +52,31 @@
       <tr>
         <td
           :colspan="totalColspan"
-          class="py-16 px-4 text-center bg-card-background"
+          class="p-0 text-center bg-card-background"
         >
           <slot name="empty">
-            <div class="flex flex-col items-center justify-center gap-2.5 max-w-sm mx-auto">
-              <div class="w-12 h-12 rounded-2xl bg-background flex items-center justify-center border border-primary-border text-secondary-text shadow-xs">
-                <FolderOpen class="w-6 h-6 stroke-[1.5]" />
+            <div
+              ref="emptyStateRef"
+              class="empty-state sticky left-0 relative flex flex-col items-center justify-center gap-3 py-20 px-6"
+              :style="{ width: emptyViewportWidth }"
+            >
+              <div
+                class="empty-state-glow pointer-events-none absolute top-8 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full bg-primary/10 blur-2xl"
+                aria-hidden="true"
+              />
+              <div
+                class="empty-state-icon relative z-10 w-14 h-14 rounded-2xl bg-background flex items-center justify-center border border-primary-border text-secondary-text shadow-xs"
+              >
+                <span class="material-symbols-outlined text-[28px] leading-none">inbox</span>
               </div>
-              <p class="text-sm font-semibold text-primary-text">
-                {{ emptyTitle }}
-              </p>
-              <p class="text-xs text-secondary-text">
-                {{ emptyText }}
-              </p>
+              <div class="empty-state-copy relative z-10 flex flex-col items-center gap-1.5 max-w-xs">
+                <p class="text-sm font-semibold text-primary-text tracking-tight">
+                  {{ emptyTitle }}
+                </p>
+                <p class="text-xs text-secondary-text leading-relaxed">
+                  {{ emptyText }}
+                </p>
+              </div>
             </div>
           </slot>
         </td>
@@ -110,7 +122,7 @@
           :class="[
             getColumnAlignClass(col),
             col.sticky === 'left' ? 'sticky left-0 bg-card-background group-hover:bg-background z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
-            col.sticky === 'right' ? 'sticky right-0 bg-card-background group-hover:bg-background z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
+            col.sticky === 'right' ? 'sticky bg-card-background group-hover:bg-background z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
             col.sticky && isRowSelected(row) ? '!bg-primary/10' : '',
             col.cellClass || '',
           ]"
@@ -194,7 +206,7 @@
         <td
           v-if="hasActions"
           class="px-4 py-3.5 text-right shrink-0 align-middle"
-          :class="actionsSticky ? 'sticky right-0 bg-card-background group-hover:bg-background z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]' : ''"
+          :class="actionsSticky ? 'sticky right-0 bg-card-background group-hover:bg-background z-20 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]' : ''"
           :style="actionsColumnStyle"
           @click.stop
         >
@@ -217,7 +229,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
 
 import DropdownMenu from '@/components/common/DropdownMenu.vue'
 import { formatCellValue } from './utils'
@@ -295,6 +307,54 @@ const emit = defineEmits([
   'row-click',
 ])
 
+const emptyStateRef = ref(null)
+const emptyViewportWidth = ref('100%')
+let emptyResizeObserver = null
+
+function syncEmptyViewportWidth() {
+  const el = emptyStateRef.value
+  if (!el) return
+  const scroller = el.closest('.overflow-x-auto')
+  if (!scroller) return
+  emptyViewportWidth.value = `${scroller.clientWidth}px`
+}
+
+function bindEmptyViewportObserver() {
+  unbindEmptyViewportObserver()
+  nextTick(() => {
+    const el = emptyStateRef.value
+    if (!el) return
+    const scroller = el.closest('.overflow-x-auto')
+    if (!scroller) return
+    syncEmptyViewportWidth()
+    emptyResizeObserver = new ResizeObserver(syncEmptyViewportWidth)
+    emptyResizeObserver.observe(scroller)
+  })
+}
+
+function unbindEmptyViewportObserver() {
+  if (emptyResizeObserver) {
+    emptyResizeObserver.disconnect()
+    emptyResizeObserver = null
+  }
+}
+
+watch(
+  () => [props.data?.length, props.loading],
+  ([length, loading]) => {
+    if (!loading && (!length || length === 0)) {
+      bindEmptyViewportObserver()
+    } else {
+      unbindEmptyViewportObserver()
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  unbindEmptyViewportObserver()
+})
+
 const skeletonCount = computed(() => Math.max(1, props.skeletonRows))
 
 const totalColspan = computed(() => {
@@ -332,6 +392,19 @@ function getColumnCellStyle(col) {
   }
   if (col.maxWidth) {
     style.maxWidth = typeof col.maxWidth === 'number' ? `${col.maxWidth}px` : col.maxWidth
+  }
+  if (col.sticky === 'right') {
+    if (props.hasActions && props.actionsSticky) {
+      style.right =
+        typeof props.actionsWidth === 'number'
+          ? `${props.actionsWidth}px`
+          : props.actionsWidth
+    } else {
+      style.right = '0'
+    }
+  }
+  if (col.sticky === 'left') {
+    style.left = '0'
   }
   return style
 }
@@ -472,3 +545,50 @@ function isInternalLink(col, row) {
   return typeof href === 'string' && href.startsWith('/') && !href.startsWith('//')
 }
 </script>
+
+<style scoped>
+.empty-state-glow {
+  animation: empty-glow-in 0.55s ease-out both;
+}
+
+.empty-state-icon {
+  animation: empty-icon-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.empty-state-copy {
+  animation: empty-copy-in 0.45s ease-out 0.08s both;
+}
+
+@keyframes empty-glow-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes empty-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes empty-copy-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

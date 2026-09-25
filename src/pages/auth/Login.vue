@@ -56,9 +56,13 @@ const handleLogin = () => {
     if (res.user_id) {
       localStorage.setItem('user_id', res.user_id)
     }
-    
-    router.push('/dashboard').catch(() => {
-      window.location.href = '/dashboard'
+
+    const redirect = typeof router.currentRoute.value.query.redirect === 'string'
+      ? router.currentRoute.value.query.redirect
+      : '/vendor/transfers'
+
+    router.push(redirect).catch(() => {
+      window.location.href = redirect
     })
   }
 

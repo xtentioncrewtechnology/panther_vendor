@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, onBeforeUnmount } from "vue";
 import NavBar from "@/components/default/NavBar.vue";
 import TopBar from "@/components/default/TopBar.vue";
 
@@ -20,15 +20,40 @@ const setSidebarCollapsed = (value) => {
 const toggleSidebarCollapsed = () => {
   setSidebarCollapsed(!isSidebarCollapsed.value);
 };
+
+const closeSidebar = () => {
+  sidebarOpen.value = false;
+};
+
+watch(sidebarOpen, (open) => {
+  if (typeof document === "undefined") return;
+  document.body.style.overflow = open ? "hidden" : "";
+});
+
+onBeforeUnmount(() => {
+  if (typeof document !== "undefined") {
+    document.body.style.overflow = "";
+  }
+});
 </script>
 
 <template>
   <div class="flex h-screen w-full overflow-hidden bg-background text-primary-text transition-colors duration-200">
+    <!-- Mobile drawer backdrop -->
+    <Transition name="sidebar-backdrop">
+      <div
+        v-if="sidebarOpen"
+        class="fixed inset-0 z-20 bg-black/50 backdrop-blur-[1px] lg:hidden"
+        aria-hidden="true"
+        @click="closeSidebar"
+      />
+    </Transition>
+
     <!-- NavBar Sidebar -->
     <NavBar
       :is-open="sidebarOpen"
       :is-collapsed="isSidebarCollapsed"
-      @close="sidebarOpen = false"
+      @close="closeSidebar"
       @toggle-collapse="toggleSidebarCollapsed"
     />
 
@@ -49,3 +74,14 @@ const toggleSidebarCollapsed = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.sidebar-backdrop-enter-active,
+.sidebar-backdrop-leave-active {
+  transition: opacity 0.2s ease;
+}
+.sidebar-backdrop-enter-from,
+.sidebar-backdrop-leave-to {
+  opacity: 0;
+}
+</style>
