@@ -1,0 +1,264 @@
+@import url("https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300..900;1,300..900&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Core */
+  --color-background: #ffffff;
+  --color-card-background: #ffffff;
+
+  /* Primary */
+  --color-primary: #facc15; /* golden yellow */
+  --color-primary-hover: #eab308;
+
+  /* Secondary */
+  --color-secondary: #111827;
+
+  /* Navbar */
+  --color-navbar: #000000;
+
+  /* Text */
+  --color-primary-text: #111827;
+  --color-secondary-text: #6b7280;
+
+  /* Border */
+  --color-primary-border: #e5e7eb;
+
+  /* Accent */
+  --color-accent: #14b8a6;
+
+  /* btn colors */
+  --color-btn-text-primary: #111827; /* dark text for yellow button */
+
+  /* Status */
+  --color-primary-green: #22c55e;
+  --color-primary-yellow: #f59e0b;
+  --color-primary-red: #ef4444;
+  --color-primary-blue: #3b82f6;
+}
+
+.dark {
+  --color-background: #ffffff;
+  --color-card-background: #f9fafb;
+
+  --color-primary: #facc15;
+  --color-primary-hover: #eab308;
+
+  --color-secondary: #111827;
+  --color-navbar: #000000;
+
+  --color-primary-text: #111827;
+  --color-secondary-text: #4b5563;
+
+  /* btn colors */
+  --color-btn-text-primary: #111827;
+
+  --color-primary-border: #334155;
+
+  --color-accent: #14b8a6;
+
+  --color-primary-green: #22c55e;
+  --color-primary-yellow: #f59e0b;
+  --color-primary-red: #ef4444;
+  --color-primary-blue: #60a5fa;
+}
+
+body {
+  font-family: "Red Hat Display", sans-serif;
+}
+
+.title-text {
+  @apply font-semibold text-[19px];
+}
+
+.sub-text {
+  @apply text-[13px];
+}
+
+.normal-text {
+  @apply text-[16px] font-medium;
+}
+
+.mid-text {
+  @apply text-[14px];
+}
+
+.input-field {
+  @apply w-full border border-primary-border rounded-lg bg-background text-primary-text text-sm placeholder-secondary-text/50 outline-none transition-all duration-150;
+}
+
+.input-field:focus {
+  outline: none;
+  box-shadow: none; /* remove glow */
+  border-color: var(--color-primary); /* optional */
+}
+
+/* Glass-morphism card */
+.glass-card {
+  @apply bg-white/80 dark:bg-card-background/80 backdrop-blur-sm border border-gray-200 dark:border-primary-border shadow-md rounded-2xl p-5;
+}
+
+/* ─── Hide Number Input Spinners Globally ────────────────────────────── */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ─── Custom Modern Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE & old Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Child row styling for tree hierarchy visualization */
+.bg-child-row {
+  background-color: rgba(167, 130, 149, 0.08);
+}
+
+.bg-child-row-hover {
+  background-color: rgba(167, 130, 149, 0.12);
+}
+
+.dark .bg-child-row {
+  background-color: rgba(167, 130, 149, 0.15);
+}
+
+.dark .bg-child-row-hover {
+  background-color: rgba(167, 130, 149, 0.25);
+}
+
+/* ─── Custom Professional Checkbox ───────────────────────────────────── */
+input[type="checkbox"],
+.custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark input[type="checkbox"],
+.dark .custom-checkbox {
+  border: 1.5px solid #475569;
+  background-color: #1e293b;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+input[type="checkbox"]:hover,
+.custom-checkbox:hover {
+  border-color: var(--color-primary);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(2, 26, 108, 0.1);
+}
+
+.dark input[type="checkbox"]:hover,
+.dark .custom-checkbox:hover {
+  border-color: var(--color-primary);
+  background-color: #1e293b;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+input[type="checkbox"]:focus-visible,
+.custom-checkbox:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(2, 26, 108, 0.18);
+}
+
+.dark input[type="checkbox"]:focus-visible,
+.dark .custom-checkbox:focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+input[type="checkbox"]:checked,
+.custom-checkbox:checked {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2.5-2.5a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E") !important;
+  background-size: 100% 100% !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+}
+
+input[type="checkbox"]:indeterminate,
+.custom-checkbox:indeterminate {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%23ffffff' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M3.5 8a1 1 0 011-1h7a1 1 0 110 2h-7a1 1 0 01-1-1z' clip-rule='evenodd'/%3E%3C/svg%3E") !important;
+  background-size: 100% 100% !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+}
+
+input[type="checkbox"]:disabled,
+.custom-checkbox:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--color-primary-border);
+  background-color: var(--color-background);
+}
