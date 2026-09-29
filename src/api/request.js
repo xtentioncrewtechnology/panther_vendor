@@ -11,7 +11,10 @@ const getDefaultApiHost = () => {
 };
 
 const getBaseURL = () => {
-  return "https://admin.panthercapitals.com/admin/";
+  // Use Vercel rewrite in production to avoid CORS and hide the backend domain
+  return import.meta.env.PROD 
+    ? "/api/admin/" 
+    : "https://admin.panthercapitals.com/admin/";
 };
 
 const DEFAULT_TIMEOUT = 2 * 60 * 1000;
