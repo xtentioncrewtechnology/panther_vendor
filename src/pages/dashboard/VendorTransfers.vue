@@ -10,7 +10,7 @@
           Vendor Queue
         </h1>
         <p class="mt-1 text-sm text-secondary-text">
-          Review assigned payouts, attach UTR + proof, and complete or reject transfers.
+          Review assigned bank-transfer deposits and withdrawals, then complete or reject.
         </p>
       </div>
 
@@ -23,6 +23,16 @@
           {{ pagination.total }}
           {{ pagination.total === 1 ? "record" : "records" }}
         </div>
+        <div class="w-full sm:w-40">
+          <BaseSelect
+            v-model="filters.type"
+            :options="typeOptions"
+            placeholder="All types"
+            variant="surface"
+            py="2.5"
+            @update:modelValue="onFilterChange"
+          />
+        </div>
         <div class="w-full sm:w-44">
           <BaseSelect
             v-model="filters.status"
@@ -30,7 +40,7 @@
             placeholder="Select Status"
             variant="surface"
             py="2.5"
-            @update:modelValue="fetchTransfers"
+            @update:modelValue="onFilterChange"
           />
         </div>
         <button
@@ -106,7 +116,25 @@
       </template>
 
       <template #cell-bank="{ row }">
-        <div class="min-w-0">
+        <div class="min-w-0" v-if="isDeposit(row)">
+          <div class="font-medium text-primary-text truncate">
+            {{ row.payment_request?.bank?.company_bank?.bank_name
+              || row.payment_request?.bank?.bank
+              || "Company bank" }}
+          </div>
+          <div class="text-xs text-secondary-text mt-0.5 truncate">
+            UTR: {{ row.payment_request?.bank?.utr || row.payment_request?.txid || "—" }}
+          </div>
+          <button
+            v-if="row.payment_request?.bank?.deposit_proof_url"
+            type="button"
+            class="text-xs text-primary-blue hover:underline font-medium cursor-pointer mt-0.5"
+            @click.stop="openProofPreview(row.payment_request.bank.deposit_proof_url)"
+          >
+            View user proof
+          </button>
+        </div>
+        <div class="min-w-0" v-else>
           <div class="font-medium text-primary-text truncate">
             {{ row.payment_request?.bank?.bank || "—" }}
           </div>
@@ -196,7 +224,7 @@
             <span v-else class="text-secondary-text">No attachment</span>
           </div>
           <button
-            v-if="row.status === 'assigned' && (!row.proof_url || !row.proof_attachment_url)"
+            v-if="row.status === 'assigned' && !isAwaitingAdmin(row) && (!row.proof_url || !row.proof_attachment_url)"
             type="button"
             class="mt-0.5 self-start text-xs font-semibold text-primary-yellow hover:underline cursor-pointer"
             @click.stop="openProcessModal(row)"
@@ -207,24 +235,41 @@
       </template>
 
       <template #cell-status="{ row }">
-        <span
-          class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide uppercase border"
-          :class="statusBadgeClass(row.status)"
-        >
-          {{ row.status }}
-        </span>
+        <div class="flex flex-col gap-1 items-start">
+          <span
+            class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide uppercase border"
+            :class="statusBadgeClass(row.status)"
+          >
+            {{ row.status }}
+          </span>
+          <span
+            v-if="isAwaitingAdmin(row)"
+            class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border border-primary-yellow/30 bg-primary-yellow/10 text-primary-yellow"
+          >
+            Awaiting admin
+          </span>
+        </div>
       </template>
 
       <template #actions="{ row }">
         <div class="flex flex-col sm:flex-row justify-end gap-1.5 sm:gap-2 flex-wrap" v-if="row.status === 'assigned'">
           <button
+            v-if="!isAwaitingAdmin(row)"
             type="button"
             @click="openProcessModal(row)"
             class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-primary text-btn-text-primary text-xs sm:text-sm font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer whitespace-nowrap"
           >
-            <span class="sm:hidden">Complete</span>
-            <span class="hidden sm:inline">Complete payment</span>
+            <span class="sm:hidden">{{ isDeposit(row) ? "Confirm" : "Complete" }}</span>
+            <span class="hidden sm:inline">
+              {{ isDeposit(row) ? "Confirm deposit" : "Complete payment" }}
+            </span>
           </button>
+          <span
+            v-else
+            class="px-2.5 sm:px-3 py-1.5 rounded-lg border border-primary-yellow/30 bg-primary-yellow/5 text-primary-yellow text-xs sm:text-sm font-semibold whitespace-nowrap"
+          >
+            Awaiting admin
+          </span>
           <button
             type="button"
             @click="openRejectModal(row)"
@@ -249,10 +294,10 @@
         <div class="px-4 sm:px-6 py-4 border-b border-primary-border flex justify-between items-center">
           <div>
             <h3 class="text-lg font-semibold text-primary-text">
-              Complete payment
+              {{ isDeposit(activeTransfer) ? "Confirm deposit" : "Complete payment" }}
             </h3>
             <p class="text-xs text-secondary-text mt-0.5">
-              Add UTR and proof attachment to finish this payout
+              {{ processModalSubtitle }}
             </p>
           </div>
           <button
@@ -280,15 +325,33 @@
               </span>
             </div>
             <div class="h-px bg-primary-border" />
-            <div class="flex justify-between gap-4 text-sm items-center">
+            <div class="flex justify-between gap-4 text-sm items-center" v-if="!isDeposit(activeTransfer)">
               <span class="text-secondary-text">Amount to pay</span>
               <span class="text-primary-yellow font-bold text-lg tabular-nums">
                 {{ formatMoney(activeTransfer?.payment_request?.paid_amount) }}
                 {{ activeTransfer?.payment_request?.paid_currency }}
               </span>
             </div>
-            <div class="h-px bg-primary-border" />
-            <div class="flex justify-between gap-4 text-sm">
+            <div class="h-px bg-primary-border" v-if="!isDeposit(activeTransfer)" />
+            <div class="flex justify-between gap-4 text-sm" v-if="isDeposit(activeTransfer)">
+              <span class="text-secondary-text shrink-0">User UTR</span>
+              <span class="text-primary-text text-right text-sm font-mono">
+                {{ activeTransfer?.payment_request?.bank?.utr
+                  || activeTransfer?.payment_request?.txid
+                  || "—" }}
+              </span>
+            </div>
+            <div class="flex justify-between gap-4 text-sm" v-if="isDeposit(activeTransfer) && activeTransfer?.payment_request?.bank?.deposit_proof_url">
+              <span class="text-secondary-text shrink-0">User proof</span>
+              <button
+                type="button"
+                class="text-primary-blue text-sm font-medium hover:underline cursor-pointer"
+                @click="openProofPreview(activeTransfer.payment_request.bank.deposit_proof_url)"
+              >
+                View
+              </button>
+            </div>
+            <div class="flex justify-between gap-4 text-sm" v-if="!isDeposit(activeTransfer)">
               <span class="text-secondary-text shrink-0">Bank</span>
               <span class="text-primary-text text-right text-sm leading-relaxed">
                 {{ activeTransfer?.payment_request?.bank?.bank }}<br />
@@ -306,11 +369,36 @@
             </div>
           </div>
 
+          <!-- Deposit amount (editable) -->
+          <div v-if="isDeposit(activeTransfer)" class="flex flex-col gap-1.5">
+            <label class="text-[13px] font-semibold text-primary-text">
+              Amount (INR)
+            </label>
+            <p class="text-[11px] text-secondary-text -mt-0.5 mb-0.5">
+              Changing the amount requires admin approval before credit
+            </p>
+            <input
+              v-model="processForm.amount_inr"
+              type="number"
+              min="0"
+              step="0.01"
+              class="input-field px-4 py-2.5 rounded-xl"
+            />
+            <p
+              v-if="depositAmountChanged"
+              class="text-xs text-primary-yellow"
+            >
+              Amount changed from
+              {{ formatMoney(originalDepositAmount) }} INR — saving will send this to admin.
+            </p>
+          </div>
+
           <!-- UTR / Remittance -->
           <div class="flex flex-col gap-1.5">
             <label class="text-[13px] font-semibold text-primary-text">
               UTR / Remittance
-              <span class="text-primary-red">*</span>
+              <span v-if="!isDeposit(activeTransfer)" class="text-primary-red">*</span>
+              <span v-else class="text-secondary-text font-normal">(Optional)</span>
             </label>
             <p class="text-[11px] text-secondary-text -mt-0.5 mb-0.5">
               Enter bank UTR number or remittance link
@@ -334,7 +422,8 @@
           <div class="flex flex-col gap-1.5">
             <label class="text-[13px] font-semibold text-primary-text">
               Proof attachment
-              <span class="text-primary-red">*</span>
+              <span v-if="!isDeposit(activeTransfer)" class="text-primary-red">*</span>
+              <span v-else class="text-secondary-text font-normal">(Optional)</span>
             </label>
             <p class="text-[11px] text-secondary-text -mt-0.5 mb-0.5">
               PNG, JPG, GIF, WEBP, or PDF · max 10 MB
@@ -440,15 +529,27 @@
             :disabled="isSubmitting || !canSaveDraft"
             class="px-4 py-2 rounded-xl border border-primary-border bg-card-background text-primary-text text-sm font-semibold hover:bg-background transition-colors disabled:opacity-50 cursor-pointer"
           >
-            {{ isSubmitting ? "Saving..." : "Save Draft" }}
+            {{
+              isSubmitting
+                ? "Saving..."
+                : depositAmountChanged
+                  ? "Save amount (needs admin)"
+                  : "Save Draft"
+            }}
           </button>
           <button
             type="button"
             @click="submitTransfer"
-            :disabled="isSubmitting || !isFormValid"
+            :disabled="isSubmitting || !isFormValid || depositAmountChanged"
             class="px-4 py-2 rounded-xl bg-primary text-btn-text-primary text-sm font-semibold hover:bg-primary-hover transition-colors disabled:opacity-50 shadow-sm cursor-pointer"
           >
-            {{ isSubmitting ? "Submitting..." : "Complete Transfer" }}
+            {{
+              isSubmitting
+                ? "Submitting..."
+                : isDeposit(activeTransfer)
+                  ? "Confirm deposit"
+                  : "Complete Transfer"
+            }}
           </button>
         </div>
       </div>
@@ -468,7 +569,11 @@
           <div>
             <h3 class="text-lg font-semibold text-primary-red">Reject Transfer</h3>
             <p class="text-xs text-secondary-text mt-0.5">
-              Funds will be reversed to the user
+              {{
+                isDeposit(activeTransfer)
+                  ? "Deposit will be rejected (no funds were credited yet)"
+                  : "Funds will be reversed to the user"
+              }}
             </p>
           </div>
           <button
@@ -677,10 +782,57 @@ const statusOptions = [
   { label: "Cancelled", value: "cancelled" },
 ];
 
+const typeOptions = [
+  { label: "All types", value: "" },
+  { label: "Deposit", value: "deposit" },
+  { label: "Withdrawal", value: "withdrawal" },
+];
+
 const filters = reactive({
   status: "assigned",
+  type: "",
 });
 
+const isDeposit = (row) =>
+  String(row?.payment_request?.type || "").toLowerCase() === "deposit";
+
+const isAwaitingAdmin = (row) =>
+  isDeposit(row) &&
+  !!row?.payment_request?.vendor_amount_adjusted &&
+  String(row?.payment_request?.approval_status || "").toLowerCase() === "pending";
+
+const processModalSubtitle = computed(() => {
+  if (!isDeposit(activeTransfer.value)) {
+    return "Add UTR and proof attachment to finish this payout";
+  }
+  if (depositAmountChanged.value) {
+    return "Amount changed — save to send this deposit to admin for approval before credit";
+  }
+  return "Verify user UTR/proof, then credit the account";
+});
+
+const hasUserDepositProof = (row) => {
+  const bank = row?.payment_request?.bank || {};
+  return !!(bank.deposit_proof_url || bank.utr || row?.payment_request?.txid);
+};
+
+const amountBaseline = ref(null);
+
+const originalDepositAmount = computed(() => {
+  if (amountBaseline.value !== null && amountBaseline.value !== undefined) {
+    return Number(amountBaseline.value);
+  }
+  const pr = activeTransfer.value?.payment_request;
+  return pr?.paid_amount != null ? Number(pr.paid_amount) : null;
+});
+
+const depositAmountChanged = computed(() => {
+  if (!isDeposit(activeTransfer.value)) return false;
+  const current = Number(processForm.amount_inr);
+  const original = Number(originalDepositAmount.value);
+  if (Number.isNaN(current) || Number.isNaN(original)) return false;
+  return Math.abs(current - original) > 0.0001;
+});
 const pagination = reactive({
   page: 1,
   per_page: 20,
@@ -902,12 +1054,16 @@ const apiErrorMessage = (err, fallback) => {
 const fetchTransfers = async () => {
   loading.value = true;
   try {
+    const params = {
+      status: filters.status,
+      page: pagination.page,
+      per_page: pagination.per_page,
+    };
+    if (filters.type) {
+      params.type = filters.type;
+    }
     const res = await apiRequest("get", urls.vendorTransfers.list, {
-      params: {
-        status: filters.status,
-        page: pagination.page,
-        per_page: pagination.per_page,
-      },
+      params,
     });
     if (res.status === "success") {
       transfers.value = res.data || [];
@@ -925,6 +1081,10 @@ const fetchTransfers = async () => {
   }
 };
 
+const onFilterChange = () => {
+  pagination.page = 1;
+  fetchTransfers();
+};
 const changePage = (page) => {
   pagination.page = page;
   fetchTransfers();
@@ -944,6 +1104,7 @@ const processForm = reactive({
   proof_url: "",
   vendor_note: "",
   proof: null,
+  amount_inr: "",
 });
 
 const rejectForm = reactive({
@@ -951,6 +1112,15 @@ const rejectForm = reactive({
 });
 
 const isFormValid = computed(() => {
+  if (depositAmountChanged.value) return false;
+  if (isDeposit(activeTransfer.value)) {
+    const hasVendorProof =
+      !!processForm.proof_url?.trim() ||
+      !!processForm.proof ||
+      !!activeTransfer.value?.proof_attachment_url ||
+      !!activeTransfer.value?.proof_url;
+    return hasUserDepositProof(activeTransfer.value) || hasVendorProof;
+  }
   const hasUtr = !!processForm.proof_url?.trim();
   const hasFile =
     !!processForm.proof || !!activeTransfer.value?.proof_attachment_url;
@@ -961,7 +1131,8 @@ const canSaveDraft = computed(() => {
   return (
     !!processForm.proof_url?.trim() ||
     !!processForm.vendor_note?.trim() ||
-    !!processForm.proof
+    !!processForm.proof ||
+    depositAmountChanged.value
   );
 });
 
@@ -1021,10 +1192,20 @@ const onDrop = (e) => {
 };
 
 const openProcessModal = (item) => {
+  if (isAwaitingAdmin(item)) {
+    snackbar.show(
+      "Amount was adjusted; waiting for admin approval before credit",
+      "info",
+    );
+    return;
+  }
   activeTransfer.value = item;
   processForm.proof_url = item.proof_url || "";
   processForm.vendor_note = item.vendor_note || "";
   processForm.proof = null;
+  const paid = item.payment_request?.paid_amount;
+  processForm.amount_inr = paid != null ? String(paid) : "";
+  amountBaseline.value = paid != null ? Number(paid) : null;
   isDragging.value = false;
   showProcessModal.value = true;
 };
@@ -1043,6 +1224,7 @@ const openRejectModal = (item) => {
 const saveDraft = async () => {
   if (!activeTransfer.value || !canSaveDraft.value) return;
   isSubmitting.value = true;
+  const wasAmountAdjust = depositAmountChanged.value;
 
   try {
     let data;
@@ -1057,6 +1239,9 @@ const saveDraft = async () => {
       if (processForm.vendor_note != null) {
         data.append("vendor_note", processForm.vendor_note);
       }
+      if (wasAmountAdjust && processForm.amount_inr !== "") {
+        data.append("amount", String(processForm.amount_inr));
+      }
       data.append("proof", processForm.proof);
     } else {
       data = {};
@@ -1065,6 +1250,9 @@ const saveDraft = async () => {
       }
       if (processForm.vendor_note != null) {
         data.vendor_note = processForm.vendor_note;
+      }
+      if (wasAmountAdjust && processForm.amount_inr !== "") {
+        data.amount = Number(processForm.amount_inr);
       }
       headers = { "Content-Type": "application/json" };
     }
@@ -1079,7 +1267,12 @@ const saveDraft = async () => {
     });
 
     if (res?.status === "success") {
-      snackbar.show(res.message || "Draft saved", "success");
+      snackbar.show(
+        wasAmountAdjust
+          ? res.message || "Sent to admin for approval"
+          : res.message || "Draft saved",
+        "success",
+      );
       closeProcessModal();
       fetchTransfers();
     }
@@ -1092,12 +1285,14 @@ const saveDraft = async () => {
 };
 
 const submitTransfer = async () => {
-  if (!activeTransfer.value || !isFormValid.value) return;
+  if (!activeTransfer.value || !isFormValid.value || depositAmountChanged.value) return;
   isSubmitting.value = true;
 
   try {
     const formData = new FormData();
-    formData.append("proof_url", processForm.proof_url.trim());
+    if (processForm.proof_url?.trim()) {
+      formData.append("proof_url", processForm.proof_url.trim());
+    }
     if (processForm.vendor_note) {
       formData.append("vendor_note", processForm.vendor_note);
     }
@@ -1116,7 +1311,10 @@ const submitTransfer = async () => {
 
     if (res?.status === "success") {
       snackbar.show(
-        res.message || "Transfer submitted and withdrawal completed",
+        res.message ||
+          (isDeposit(activeTransfer.value)
+            ? "Deposit confirmed"
+            : "Transfer submitted and withdrawal completed"),
         "success",
       );
       closeProcessModal();

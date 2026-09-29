@@ -1,19 +1,13 @@
 # Vendor docs
 
-Guide for the **Vendor Queue** product: staff who manually pay out **bank-transfer withdrawals** after admin first-approve.
+Guide for the **Vendor Queue**: staff connected to a bank-transfer payment method who confirm **deposits** and complete **withdrawals**.
 
 | Doc | What it covers |
 |-----|----------------|
-| [Overview](./overview.md) | Purpose, actors, apps, auth, statuses |
-| [Flow](./flow.md) | End-to-end journey (user → admin → vendor) |
-| [API reference](./api.md) | Every API involved (vendor + admin + upstream create) |
+| [Overview](./overview.md) | Purpose, actors, apps, auth |
+| [Flow](./flow.md) | End-to-end journey (method → staff → queue) |
+| [API reference](./api.md) | Vendor + admin + upstream APIs |
 
-**Repos**
+**Repos:** this frontend · backend `app/payments/vendor/` · backend docs `docs/vendor/`
 
-| Piece | Path |
-|-------|------|
-| Vendor UI | This frontend package (`src/`) |
-| Vendor backend package | Backend `app/payments/vendor/` |
-| Backend docs | Backend `docs/vendor/` |
-
-Vendor does **not** create withdrawals. It only completes bank-transfer payouts that are already in `processing`. Crypto / Paymaxis are out of scope.
+Crypto / Paymaxis are out of scope.

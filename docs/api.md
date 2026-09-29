@@ -129,8 +129,12 @@ Used by: Vendor Queue page
 | Query | Type | Notes |
 |-------|------|--------|
 | `status` | string | `assigned` / `completed` / `cancelled` |
+| `type` | string | `deposit` / `withdrawal` |
 | `page` | int | default `1` |
 | `per_page` | int | default `20`, max `100` |
+
+Non-superadmin responses are filtered to `assigned_to` = current user.
+
 
 **Success `200`**
 
@@ -158,8 +162,8 @@ Permission: `vendor.view`
 
 `PATCH /admin/vendor/transfers/<transfer_id>`  
 Permission: `vendor.submit`  
-Used by: Save Draft  
-Only while transfer `assigned` and PR `processing`.
+Used by: Save Draft / amount adjust  
+Only while transfer `assigned`. Deposit amount adjust requires PR `processing`.
 
 Multipart **or** JSON. At least one field required.
 
@@ -169,6 +173,7 @@ Multipart **or** JSON. At least one field required.
 | `proof_url` or `url` | remittance / UTR link |
 | `vendor_note` or `note` | empty string clears |
 | `assigned_to` | staff user id; `0` / empty clears |
+| `amount` or `paid_amount` | **Deposit only (INR)**. If changed vs current, sets `vendor_amount_adjusted` and moves PR to `pending` (admin must approve before credit) |
 
 **JSON example**
 
@@ -178,6 +183,12 @@ Multipart **or** JSON. At least one field required.
   "vendor_note": "IMPS done",
   "assigned_to": 42
 }
+```
+
+**Deposit amount adjust**
+
+```json
+{ "amount": 2500 }
 ```
 
 **Success `200`**
@@ -190,20 +201,27 @@ Multipart **or** JSON. At least one field required.
 }
 ```
 
+When amount was changed, message indicates admin approval is required. List/detail `payment_request` includes:
+
+- `vendor_amount_adjusted` (bool)
+- `original_paid_amount` (INR before first vendor adjust)
+
 ---
 
-### B4. Submit (completes withdrawal)
+### B4. Submit (completes withdrawal or confirms deposit)
 
 `POST /admin/vendor/transfers/<transfer_id>/submit`  
 Permission: `vendor.submit`  
 `Content-Type: multipart/form-data`  
-Used by: Complete Transfer
+Used by: Complete Transfer / Confirm deposit
 
 | Field | Required | Notes |
 |-------|----------|--------|
-| `proof` | yes* | *or already saved via PATCH |
-| `proof_url` or `url` | yes* | *or already saved via PATCH |
+| `proof` | yes* for withdrawal | *or already saved via PATCH; optional for deposit if user proof exists |
+| `proof_url` or `url` | yes* for withdrawal | *or already saved; optional for deposit |
 | `vendor_note` or `note` | no | optional |
+
+Blocked for deposits with `vendor_amount_adjusted` while still `pending` (awaiting admin).
 
 **Effects**
 
@@ -211,6 +229,7 @@ Used by: Complete Transfer
 - `submitted_by` / `submitted_at` set
 - PR `approval_status` → `approved`
 - PR `payment_status` → `completed`
+- Deposit: credits trading account
 - `approved_by` = vendor user id
 
 **Success `200`**
