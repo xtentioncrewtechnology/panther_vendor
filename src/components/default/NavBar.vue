@@ -7,24 +7,24 @@
     ]"
   >
     <div
-      class="p-4 font-bold text-xl mb-4 border-b border-navbar-border tracking-tight"
+      class="px-3 py-3 font-bold text-base mb-2 border-b border-navbar-border tracking-tight"
       :class="railCollapsed ? 'lg:text-center' : ''"
     >
       <span v-if="!railCollapsed">Vendor</span>
       <span v-else class="text-primary">V</span>
     </div>
 
-    <div class="flex flex-col px-2 gap-1.5 flex-1 overflow-y-auto no-scrollbar">
+    <div class="flex flex-col px-2 gap-1 flex-1 overflow-y-auto no-scrollbar">
       <router-link
         to="/vendor/transfers"
         active-class="!bg-primary !text-btn-text-primary shadow-sm"
-        class="flex items-center px-4 py-3 text-navbar-muted hover:text-navbar-text hover:bg-navbar-hover rounded-xl transition-colors font-semibold"
+        class="flex items-center h-10 px-3 text-navbar-muted hover:text-navbar-text hover:bg-navbar-hover rounded-xl transition-colors font-medium text-sm"
         :class="railCollapsed ? 'lg:justify-center lg:px-0' : ''"
         @click="$emit('close')"
       >
         <span
-          class="material-symbols-outlined text-[22px]"
-          :class="railCollapsed ? 'lg:mr-0 mr-3' : 'mr-3'"
+          class="material-symbols-outlined text-[20px]"
+          :class="railCollapsed ? 'lg:mr-0 mr-2.5' : 'mr-2.5'"
         >
           payments
         </span>
@@ -41,7 +41,7 @@
           class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-primary-red/90 hover:text-primary-red hover:bg-primary-red/10 transition-colors cursor-pointer"
         >
           <span class="material-symbols-outlined text-[20px]">logout</span>
-          <span class="text-sm font-semibold">Logout</span>
+          <span class="text-xs font-semibold">Logout</span>
         </button>
       </div>
 
@@ -57,12 +57,12 @@
           @click="goProfile"
         >
           <div
-            class="shrink-0 h-9 w-9 rounded-full bg-primary flex items-center justify-center text-sm font-bold text-btn-text-primary"
+            class="shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-btn-text-primary"
           >
             {{ profile.initials }}
           </div>
           <div v-if="!railCollapsed" class="min-w-0 flex-1">
-            <p class="text-sm font-semibold text-navbar-text truncate leading-tight">
+            <p class="text-xs font-semibold text-navbar-text truncate leading-tight">
               {{ profile.displayName }}
             </p>
             <p class="text-[11px] text-navbar-muted truncate mt-0.5">

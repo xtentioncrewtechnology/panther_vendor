@@ -1,13 +1,19 @@
 <template>
-  <div class="flex flex-col items-center justify-center h-full text-center">
-    <h2 class="text-xl font-semibold mb-2">Access Denied</h2>
-    <p class="text-gray-500 mb-4">You do not have permission to view this page.</p>
-    <button @click="$emit('retry')" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-      Retry
-    </button>
-  </div>
+  <EmptyState
+    title="Access Denied"
+    description="You do not have permission to view this page."
+    icon="lock"
+  >
+    <template #action>
+      <button type="button" class="btn-primary" @click="$emit('retry')">
+        Retry
+      </button>
+    </template>
+  </EmptyState>
 </template>
 
 <script setup>
-defineEmits(['retry']);
+import EmptyState from "./EmptyState.vue";
+
+defineEmits(["retry"]);
 </script>

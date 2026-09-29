@@ -113,7 +113,7 @@
             @click="goToPage(p)"
             class="w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold border transition cursor-pointer select-none"
             :class="p === currentPage
-              ? 'bg-primary text-white border-primary '
+              ? 'bg-primary text-btn-text-primary border-primary '
               : 'bg-background text-secondary-text border-primary-border hover:text-primary-text hover:border-primary'"
           >
             {{ p }}

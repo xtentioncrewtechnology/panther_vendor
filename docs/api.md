@@ -70,7 +70,9 @@ Returned in `data` for list / get / patch / submit / reject:
   "id": 12,
   "payment_request_id": 455,
   "status": "assigned",
-  "assigned_to": null,
+  "assigned_to": 42,
+  "assigned_to_name": "Vendor Staff",
+  "assigned_to_email": "vendor@example.com",
   "proof_attachment": "vendor_transfers/12/3/xxx.pdf",
   "proof_attachment_url": "https://cdn.example.com/vendor_transfers/12/3/xxx.pdf",
   "proof_url": "https://bank.example/utr/123",
@@ -90,6 +92,12 @@ Returned in `data` for list / get / patch / submit / reject:
     "currency": "USD",
     "paid_amount": 850.0,
     "paid_currency": "INR",
+    "conversion_rate": {
+      "payment_currency": "INR",
+      "account_currency": "USD",
+      "units_per_usd": 85.0
+    },
+    "converted_at": "2026-09-25T07:00:00",
     "user_id": 88,
     "user_email": "user@example.com",
     "user_name": "Jane Doe",
@@ -114,7 +122,10 @@ Returned in `data` for list / get / patch / submit / reject:
 
 Use transfer **`id`** on vendor routes (not payment request id).  
 `proof_attachment_url` = uploaded file CDN URL.  
-`proof_url` = vendor UTR / remittance link.
+`proof_url` = vendor UTR / remittance link.  
+`assigned_to_name` / `assigned_to_email` = connected vendor staff (from `assigned_to`).  
+`payment_request.conversion_rate` = locked FX snapshot (`1 USD = units_per_usd` of `payment_currency`); `null` if not stored.  
+`payment_request.converted_at` = when that rate was locked.
 
 Proof file rules: `png` / `jpg` / `jpeg` / `gif` / `webp` / `pdf`, max **10 MB**.
 
@@ -123,17 +134,19 @@ Proof file rules: `png` / `jpg` / `jpeg` / `gif` / `webp` / `pdf`, max **10 MB**
 ### B1. List transfers
 
 `GET /admin/vendor/transfers`  
-Permission: `vendor.view`  
+Permission: `vendor.view` (unscoped with `vendor.view_all`)  
 Used by: Vendor Queue page
 
 | Query | Type | Notes |
 |-------|------|--------|
 | `status` | string | `assigned` / `completed` / `cancelled` |
 | `type` | string | `deposit` / `withdrawal` |
+| `assigned_to` | int | staff user id; only when caller has `vendor.view_all` or is non-staff |
 | `page` | int | default `1` |
 | `per_page` | int | default `20`, max `100` |
 
-Non-superadmin responses are filtered to `assigned_to` = current user.
+Staff without `vendor.view_all`: filtered to `assigned_to` = current user.  
+Staff with `vendor.view_all` / non-staff: all jobs; optional `assigned_to` query.
 
 
 **Success `200`**
@@ -152,6 +165,8 @@ Non-superadmin responses are filtered to `assigned_to` = current user.
 
 `GET /admin/vendor/transfers/<transfer_id>`  
 Permission: `vendor.view`
+
+Scoped staff (no `vendor.view_all`) get `404` if the transfer is not assigned to them.
 
 **Success `200`:** `{ "status": "success", "data": { /* VendorTransfer */ } }`  
 **Not found `404`:** `{ "status": "error", "message": "Vendor transfer not found" }`

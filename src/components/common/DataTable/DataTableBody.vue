@@ -8,7 +8,7 @@
         class="border-b border-primary-border bg-card-background animate-pulse"
       >
         <!-- Selection checkbox skeleton -->
-        <td v-if="selectable" class="w-10 px-3 py-3.5 text-center">
+        <td v-if="selectable" class="w-10 px-3 py-2 text-center">
           <div class="w-3.5 h-3.5 rounded bg-background mx-auto" />
         </td>
 
@@ -16,7 +16,7 @@
         <td
           v-for="col in columns"
           :key="`skeleton-col-${col.key}`"
-          class="px-4 py-3.5"
+          class="px-3 py-2"
           :class="[
             getColumnAlignClass(col),
             col.sticky === 'left' ? 'sticky left-0 bg-card-background z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
@@ -36,7 +36,7 @@
         <!-- Actions skeleton -->
         <td
           v-if="hasActions"
-          class="px-4 py-3.5 text-right"
+          class="px-3 py-2 text-right"
           :class="actionsSticky ? 'sticky right-0 bg-card-background z-20' : ''"
           :style="actionsColumnStyle"
         >
@@ -98,7 +98,7 @@
         <!-- Row Selection Checkbox -->
         <td
           v-if="selectable"
-          class="w-10 px-3 py-3.5 text-center shrink-0"
+          class="w-10 px-3 py-2 text-center shrink-0"
           :class="{ 'sticky left-0 bg-card-background group-hover:bg-background z-10': hasStickyLeft }"
           @click.stop
         >
@@ -118,7 +118,7 @@
           v-for="col in columns"
           :key="col.key"
           :style="getColumnCellStyle(col)"
-          class="px-4 py-3.5 text-xs text-primary-text"
+          class="px-3 py-2 text-xs text-primary-text"
           :class="[
             getColumnAlignClass(col),
             col.sticky === 'left' ? 'sticky left-0 bg-card-background group-hover:bg-background z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
@@ -205,7 +205,7 @@
         <!-- Actions Cell -->
         <td
           v-if="hasActions"
-          class="px-4 py-3.5 text-right shrink-0 align-middle"
+          class="px-3 py-2 text-right shrink-0 align-middle"
           :class="actionsSticky ? 'sticky right-0 bg-card-background group-hover:bg-background z-20 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]' : ''"
           :style="actionsColumnStyle"
           @click.stop

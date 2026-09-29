@@ -207,42 +207,54 @@ Mutation actions **must**:
 
 All components **must** use the centralized design system defined in `src/style.css`. Do not write arbitrary inline styles or custom hex colors when a theme token exists.
 
+Root rem: `html { font-size: 14px; }`. Class-based dark mode via `html.dark`. Brand primary is **yellow** (`#facc15`) with dark button text (`text-btn-text-primary`). Never use `text-white` on `bg-primary`.
+
 ### A. Core Theme Color Tokens (Tailwind Theme Variables)
 
 | Variable Token | Purpose | Light Mode | Dark Mode |
 | :--- | :--- | :--- | :--- |
-| `bg-background` | Application Canvas / Page Background | `#f5f7fb` | `#0f172a` |
-| `bg-card-background` | Cards, Modals, Drawers, Panels | `#ffffff` | `#1e293b` |
-| `border-primary-border` | Standard Borders & Dividers | `#e5e7eb` | `#334155` |
-| `text-primary-text` | Primary Headings & Main Text | `#111827` | `#f8fafc` |
-| `text-secondary-text` | Subtitles, Labels, Table Headers | `#6b7280` | `#94a3b8` |
-| `bg-primary` / `text-primary` | Main Brand Primary Action / Highlight | `#021a6c` | `#3b82f6` |
-| `bg-primary-hover` | Primary Button / Link Hover State | `#16308d` | `#60a5fa` |
-| `text-primary-green` | Success status, Active state, positive | `#22c55e` | `#22c55e` |
-| `text-primary-yellow` | Pending, warning, processing status | `#f59e0b` | `#f59e0b` |
-| `text-primary-red` | Failed, inactive, error status, delete | `#ef4444` | `#ef4444` |
+| `bg-background` | Application Canvas / Page Background | `#f3f4f6` | `#0b0f17` |
+| `bg-card-background` | Cards, Modals, Drawers, Panels | `#ffffff` | `#111827` |
+| `border-primary-border` | Standard Borders & Dividers | `#e5e7eb` | `#374151` |
+| `text-primary-text` | Primary Headings & Main Text | `#111827` | `#f3f4f6` |
+| `text-secondary-text` | Subtitles, Labels, Table Headers | `#6b7280` | `#9ca3af` |
+| `bg-primary` / `text-primary` | Brand primary (yellow) | `#facc15` | `#facc15` |
+| `bg-primary-hover` | Primary hover | `#eab308` | `#eab308` |
+| `text-btn-text-primary` | Text on yellow primary buttons | `#111827` | `#111827` |
+| `text-primary-green` | Success status, Active state, positive | `#22c55e` | `#4ade80` |
+| `text-primary-yellow` | Pending, warning, processing status | `#f59e0b` | `#fbbf24` |
+| `text-primary-red` | Failed, inactive, error status, delete | `#ef4444` | `#f87171` |
 | `text-primary-blue` | Info badges, active tabs, secondary links | `#3b82f6` | `#60a5fa` |
 
 ### B. Global Typography & Utility Classes
 
 | Class Name | Definition | Usage |
 | :--- | :--- | :--- |
-| `.title-text` | `font-semibold text-[19px]` | Page & Card Headings |
-| `.sub-text` | `text-[13px]` | Supporting explanations & subtext |
-| `.normal-text` | `text-[16px] font-medium` | Emphasized body text |
-| `.mid-text` | `text-[14px]` | Standard body text / table cell text |
-| `.input-field` | Full-width input with themed border & focus | Form input fields |
-| `.custom-checkbox` | Unified theme-aware checkbox | Table selection & form checks |
-| `.no-scrollbar` | Hides scrollbar across browsers | Horizontal tab bars & compact containers |
-| `.bg-child-row` | Highlighted child row background | Nested / tree / hierarchical rows |
+| `.page-title` | `text-lg font-semibold tracking-tight` | Ops page H1 (max; avoid `text-2xl`) |
+| `.page-subtitle` | `text-xs text-secondary-text` | Page supporting line |
+| `.section-label` | `text-[11px] uppercase tracking-wide` | Eyebrow labels |
+| `.title-text` | `font-semibold text-[16px]` | Card & modal headings |
+| `.sub-text` | `text-[11px]` | Supporting explanations |
+| `.normal-text` | `text-[14px] font-medium` | Emphasized body text |
+| `.mid-text` | `text-[12px]` | Standard body / table cell text |
+| `.input-field` | `h-9` themed input, `rounded-xl` | Form inputs |
+| `.btn-primary` / `.btn-secondary` / `.btn-danger` | `h-9` action buttons | Primary / ghost / danger CTAs |
+| `.modal-panel` / `.modal-header` / `.modal-footer` | Consistent modal chrome | Dialogs |
 
-### C. Standard Form Input Example
+### C. Density
+
+- Controls: `h-9` + `text-sm`
+- Table row actions: `h-8` + `text-xs`
+- Table cells: `px-3 py-2`
+- Modal header/footer: `px-5 py-3`; modal title: `text-base`
+
+### D. Standard Form Input Example
 ```html
 <input
   v-model="formData.name"
   type="text"
   placeholder="Enter plan name..."
-  class="input-field px-3 py-2 text-sm"
+  class="input-field px-3 text-sm"
 />
 ```
 
@@ -250,12 +262,13 @@ All components **must** use the centralized design system defined in `src/style.
 
 ## 5. Shared Component Reuse & Global Component Immutability (`src/components/common`)
 
-> ⚠️ **CRITICAL ARCHITECTURAL RULE: DO NOT MODIFY GLOBAL COMMON COMPONENTS**
+> ⚠️ **CRITICAL ARCHITECTURAL RULE: DO NOT MODIFY GLOBAL COMMON COMPONENTS FOR ONE MODULE**
 >
-> All components in `src/components/common/` are global components shared across every single module in the admin application. 
-> - **DO NOT edit or alter code inside `src/components/common/`** for a specific module's convenience. Any change to a common component can break other existing modules across the entire platform.
-> - **ALWAYS leverage existing props, slots, and emitted events** to customize behavior in your module.
-> - **ALWAYS check `src/components/common/` first** before writing any new UI element or widget. If a common component exists, you must reuse it instead of creating duplicates.
+> All components in `src/components/common/` are shared across the vendor portal.
+> - **DO NOT** change common components for a single page’s convenience — use props, slots, and events.
+> - **DO** fix common components when the issue is global (tokens, light/dark contrast, density).
+> - **ALWAYS check `src/components/common/` first** before writing a duplicate widget.
+> - Prefer shared **`EmptyState`** for empty / error placeholders.
 
 ### Standard Shared Components Registry
 
@@ -273,6 +286,7 @@ All components **must** use the centralized design system defined in `src/style.
 | **`DropdownMenu`** | `@/components/common/DropdownMenu.vue` | Action menu dropdown for table rows or card options. |
 | **`Pagination`** / **`SimplePagination`** | `@/components/common/` | Standard pagination controllers. |
 | **`SkeletonCard`** | `@/components/common/SkeletonCard.vue` | Shimmer/skeleton placeholder while loading cards. |
+| **`EmptyState`** | `@/components/common/EmptyState.vue` | Standard empty / error placeholder with optional CTA. |
 | **`NoPermissionsState`** | `@/components/common/NoPermissionsState.vue` | Standard 403 access restricted placeholder. |
 
 ### Example: Using `DataTable` in a Module
@@ -392,11 +406,11 @@ When sending `PATCH` requests to update a resource (e.g., in edit modals or form
 
 ## 8. Iconography Standards
 
-- **Icons**: Always use `@hugeicons/core-free-icons` via `<HugeIcon :icon="IconName" :size="16" />`.
-- **Standard Sizing**:
-  - Buttons / Tab Nav: `:size="16"`
-  - Card Headers / Menu Items: `:size="18"`
-  - Modals / Hero Headers: `:size="20"` or `:size="24"`
+- **Icons**: Use Material Symbols via `<span class="material-symbols-outlined">icon_name</span>`.
+- **Standard sizing** (approx.):
+  - Buttons / table actions: 16–18px
+  - Nav / card headers: 18–20px
+  - Modal / hero accents: 20–24px
 
 ---
 

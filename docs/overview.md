@@ -16,7 +16,7 @@ Login: `POST /admin/login` (staff + RBAC role **Vendor**).
 
 ## Main screen
 
-`/vendor/transfers` — filters by status and type (deposit / withdrawal). List is scoped to the logged-in staff’s `assigned_to` jobs.
+`/vendor/transfers` — filters by status and type (deposit / withdrawal). List is scoped to the logged-in staff’s `assigned_to` jobs. Admins with `vendor.view_all` see all jobs via the same API (optional `assigned_to` filter).
 
 ## API base
 

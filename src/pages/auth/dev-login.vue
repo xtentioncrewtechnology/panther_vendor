@@ -141,24 +141,22 @@ const handleLogin = () => {
     <!-- LEFT SIDE -->
     <div class="hidden lg:flex lg:w-[48%] p-5">
       <div class="dev-login__panel relative w-full h-full overflow-hidden rounded-3xl shadow-2xl">
-        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(59,130,246,0.35),transparent_55%),radial-gradient(ellipse_at_80%_80%,rgba(15,23,42,0.9),transparent_50%),linear-gradient(145deg,#0c1a3a_0%,#0f172a_45%,#1e3a5f_100%)]" />
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(250,204,21,0.22),transparent_55%),radial-gradient(ellipse_at_80%_80%,rgba(15,23,42,0.85),transparent_50%),linear-gradient(145deg,#111827_0%,#0b0f17_50%,#1f2937_100%)]" />
         <div class="dev-login__grid absolute inset-0 opacity-[0.12]" />
-        <div class="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-primary/20 blur-3xl" />
-        <div class="absolute -bottom-20 -right-10 w-80 h-80 rounded-full bg-blue-500/15 blur-3xl" />
+        <div class="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-primary/25 blur-3xl" />
+        <div class="absolute -bottom-20 -right-10 w-80 h-80 rounded-full bg-primary-yellow/10 blur-3xl" />
 
         <div class="relative z-10 h-full flex flex-col items-center justify-center px-10 text-center">
-          <div class="mb-8 w-20 h-20 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
+          <div class="mb-8 w-20 h-20 rounded-2xl bg-primary/15 border border-primary/30 backdrop-blur-sm flex items-center justify-center shadow-lg">
+            <span class="material-symbols-outlined text-[40px] text-primary">terminal</span>
           </div>
           <p class="text-[11px] font-semibold tracking-[0.35em] uppercase text-primary mb-3">
             Local Override
           </p>
-          <h2 class="text-5xl font-bold tracking-[0.2em] text-white/25 select-none">
+          <h2 class="text-5xl font-bold tracking-[0.2em] text-white/20 select-none">
             DEV
           </h2>
-          <p class="mt-6 max-w-xs text-sm leading-relaxed text-slate-300/80">
+          <p class="mt-6 max-w-xs text-sm leading-relaxed text-navbar-muted">
             Point this build at a tunnel or staging host without changing env files.
           </p>
         </div>
@@ -178,7 +176,7 @@ const handleLogin = () => {
             </div>
           </div>
 
-          <h1 class="text-2xl font-semibold tracking-tight text-primary-text">
+          <h1 class="page-title">
             Developer Login Override
           </h1>
           <p class="text-[13px] text-primary-yellow mt-2 font-medium">

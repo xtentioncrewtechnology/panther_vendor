@@ -217,7 +217,7 @@ const handleMouseLeave = () => {
   border: 1px solid var(--color-primary-border);
   padding: 8px 12px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1.4;
   box-shadow:
@@ -313,7 +313,7 @@ const handleMouseLeave = () => {
 
 @media (max-width: 768px) {
   .tooltip-content {
-    font-size: 11px;
+    font-size: 10px;
     padding: 5px 10px;
   }
 }

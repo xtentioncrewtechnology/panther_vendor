@@ -583,7 +583,7 @@ onBeforeUnmount(() => {
       <span
         class="material-symbols-outlined ml-2 shrink-0 text-secondary-text transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
-        style="font-size: 16px;"
+        style="font-size: 14px;"
       >expand_more</span>
     </button>
 
@@ -608,7 +608,7 @@ onBeforeUnmount(() => {
             <div class="relative flex items-center">
               <span
                 class="material-symbols-outlined absolute left-2.5 text-secondary-text pointer-events-none"
-                style="font-size: 14px;"
+                style="font-size: 12px;"
               >search</span>
               <input
                 ref="searchRef"
@@ -687,7 +687,7 @@ onBeforeUnmount(() => {
               <span
                 v-if="isSelected(option) && !option.disabled"
                 class="material-symbols-outlined text-primary shrink-0"
-                style="font-size: 14px;"
+                style="font-size: 12px;"
               >check</span>
             </li>
           </ul>

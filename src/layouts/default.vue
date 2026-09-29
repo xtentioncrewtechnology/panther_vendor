@@ -43,7 +43,7 @@ onBeforeUnmount(() => {
     <Transition name="sidebar-backdrop">
       <div
         v-if="sidebarOpen"
-        class="fixed inset-0 z-20 bg-black/50 backdrop-blur-[1px] lg:hidden"
+        class="fixed inset-0 z-20 bg-overlay backdrop-blur-[1px] lg:hidden"
         aria-hidden="true"
         @click="closeSidebar"
       />
@@ -67,7 +67,7 @@ onBeforeUnmount(() => {
 
       <!-- Router View Area -->
       <main
-        class="flex-1 overflow-y-auto no-scrollbar bg-background p-4 lg:p-6"
+        class="flex-1 overflow-y-auto no-scrollbar bg-background p-3 lg:p-5"
       >
         <router-view />
       </main>

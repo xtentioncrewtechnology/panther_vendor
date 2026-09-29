@@ -4,7 +4,7 @@
       <!-- Row Selection Checkbox Header -->
       <th
         v-if="selectable"
-        class="w-10 px-3 py-3 text-center border-b border-primary-border bg-card-background shrink-0"
+        class="w-10 px-3 py-2 text-center border-b border-primary-border bg-card-background shrink-0"
         :class="{ 'sticky left-0 z-25': hasStickyLeft }"
       >
         <div class="flex items-center justify-center">
@@ -24,7 +24,7 @@
         v-for="col in columns"
         :key="col.key"
         :style="getColumnHeaderStyle(col)"
-        class="relative px-4 py-3 border-b border-primary-border bg-card-background transition-colors group"
+        class="relative px-3 py-2 border-b border-primary-border bg-card-background transition-colors group"
         :class="[
           getColumnAlignClass(col),
           col.sortable ? 'cursor-pointer hover:text-primary-text hover:bg-background/60' : '',
@@ -68,7 +68,7 @@
       <th
         v-if="hasActions"
         :style="actionsColumnStyle"
-        class="px-4 py-3 text-right border-b border-primary-border bg-card-background shrink-0"
+        class="px-3 py-2 text-right border-b border-primary-border bg-card-background shrink-0"
         :class="actionsSticky ? 'sticky right-0 z-30 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)]' : ''"
       >
         <div class="flex items-center justify-end gap-1.5">

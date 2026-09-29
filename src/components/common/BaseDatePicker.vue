@@ -530,15 +530,15 @@ function getDayCellClass(cell) {
 
   // Selected Start and/or End
   if (cell.isSelectedStart && cell.isSelectedEnd) {
-    return `${base} rounded-full bg-primary text-white font-bold shadow-md z-10`;
+    return `${base} rounded-full bg-primary text-btn-text-primary font-bold shadow-md z-10`;
   }
   if (cell.isSelectedStart) {
     return isRangeMode.value && tempEnd.value
-      ? `${base} rounded-l-lg rounded-r-none bg-primary text-white font-bold shadow-md z-10`
-      : `${base} rounded-lg bg-primary text-white font-bold shadow-md z-10`;
+      ? `${base} rounded-l-lg rounded-r-none bg-primary text-btn-text-primary font-bold shadow-md z-10`
+      : `${base} rounded-lg bg-primary text-btn-text-primary font-bold shadow-md z-10`;
   }
   if (cell.isSelectedEnd) {
-    return `${base} rounded-r-lg rounded-l-none bg-primary text-white font-bold shadow-md z-10`;
+    return `${base} rounded-r-lg rounded-l-none bg-primary text-btn-text-primary font-bold shadow-md z-10`;
   }
 
   // In Range / In Hover Range
@@ -990,7 +990,7 @@ watch(
                   :class="[
                     'py-2 px-3 text-xs font-medium rounded-lg transition-colors cursor-pointer',
                     viewMonth === mIdx
-                      ? 'bg-primary text-white font-semibold'
+                      ? 'bg-primary text-btn-text-primary font-semibold'
                       : 'text-primary-text hover:bg-background',
                   ]"
                 >
@@ -1011,7 +1011,7 @@ watch(
                   :class="[
                     'py-2 px-3 text-xs font-medium rounded-lg transition-colors cursor-pointer',
                     viewYear === yr
-                      ? 'bg-primary text-white font-semibold'
+                      ? 'bg-primary text-btn-text-primary font-semibold'
                       : 'text-primary-text hover:bg-background',
                   ]"
                 >
@@ -1094,7 +1094,7 @@ watch(
                 type="button"
                 @click="apply"
                 :disabled="!isDraftValid"
-                class="px-3.5 py-1.5 rounded-lg bg-primary text-white font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+                class="px-3.5 py-1.5 rounded-lg bg-primary text-btn-text-primary font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
               >
                 Apply
               </button>
