@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import apiRequest from "@/api/request";
 import urls from "@/api/urls";
@@ -14,6 +14,19 @@ export const useProfileStore = defineStore("user", () => {
 
   const dashboard = ref(null);
   const dashboardLoading = ref(false);
+
+  const displayName = computed(() => {
+    return user.value?.name || user.value?.email || "Vendor User";
+  });
+
+  const roleLabel = computed(() => {
+    return user.value?.role || "Vendor";
+  });
+
+  const initials = computed(() => {
+    const name = user.value?.name || user.value?.email || "V";
+    return name.charAt(0).toUpperCase();
+  });
 
   // ─── Fetch User ────────────────────────────────────
   function fetchUserProfile() {
@@ -167,5 +180,8 @@ export const useProfileStore = defineStore("user", () => {
     dashboardLoading,
     fetchDashboard,
     submitFmRequest,
+    displayName,
+    roleLabel,
+    initials,
   };
 });
