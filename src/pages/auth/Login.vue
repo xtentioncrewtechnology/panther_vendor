@@ -90,11 +90,16 @@ const handleLogin = () => {
     <!-- Left Side: Image -->
     <div
       class="hidden lg:block lg:w-1/2 bg-cover bg-left bg-no-repeat bg-[#0F172A]"
-      style="background-image: url('/3.png'); border-right: 1px solid rgba(0,0,0,0.05);"
+      style="
+        background-image: url(&quot;/3.png&quot;);
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
+      "
     ></div>
 
     <!-- Right Side: Form -->
-    <div class="w-full lg:w-1/2 flex flex-col items-center justify-center px-6 sm:px-12 py-10 relative">
+    <div
+      class="w-full lg:w-1/2 flex flex-col items-center justify-center px-6 sm:px-12 py-10 relative"
+    >
       <div class="w-full max-w-105">
         <!-- Logo -->
         <div class="flex justify-center mb-10">
@@ -103,8 +108,12 @@ const handleLogin = () => {
 
         <!-- Header -->
         <div class="text-center mb-8">
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Enter your email to continue</h1>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Log in to Veyntro with your account.</p>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Enter your email to continue
+          </h1>
+          <p class="text-sm text-gray-500 dark:text-gray-400">
+            Log in to Veyntro with your account.
+          </p>
         </div>
         <!-- Form -->
         <form class="space-y-5" @submit.prevent="handleLogin">
@@ -117,7 +126,10 @@ const handleLogin = () => {
 
           <!-- Email -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-gray-900 dark:text-primary-text">Email</label>
+            <label
+              class="text-xs font-bold text-gray-900 dark:text-primary-text"
+              >Email</label
+            >
             <input
               v-model="form.email"
               type="email"
@@ -125,7 +137,8 @@ const handleLogin = () => {
               placeholder="Enter Your Email here"
               class="w-full px-4 py-3 text-sm rounded-xl border border-gray-200 dark:border-primary-border bg-white dark:bg-card-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-primary-text placeholder-gray-400"
               :class="{
-                'border-red-500 focus:ring-red-500/20 focus:border-red-500': errors.email,
+                'border-red-500 focus:ring-red-500/20 focus:border-red-500':
+                  errors.email,
               }"
             />
             <p v-if="errors.email" class="text-xs text-red-500 mt-1">
@@ -135,7 +148,10 @@ const handleLogin = () => {
 
           <!-- Password -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold text-gray-900 dark:text-primary-text">Password</label>
+            <label
+              class="text-xs font-bold text-gray-900 dark:text-primary-text"
+              >Password</label
+            >
             <div class="relative">
               <input
                 v-model="form.password"
@@ -144,7 +160,8 @@ const handleLogin = () => {
                 placeholder="••••••••••"
                 class="w-full pl-4 pr-10 py-3 text-sm rounded-xl border border-gray-200 dark:border-primary-border bg-white dark:bg-card-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-gray-900 dark:text-primary-text placeholder-gray-400"
                 :class="{
-                  'border-red-500 focus:ring-red-500/20 focus:border-red-500': errors.password,
+                  'border-red-500 focus:ring-red-500/20 focus:border-red-500':
+                    errors.password,
                 }"
               />
               <button
@@ -164,7 +181,11 @@ const handleLogin = () => {
           </div>
 
           <!-- Submit Button -->
-          <button type="submit" class="w-full bg-[#fcd535] hover:bg-[#f3ca26] text-gray-900 font-bold py-3.5 rounded-xl transition-colors flex justify-center items-center gap-2" :disabled="loading">
+          <button
+            type="submit"
+            class="w-full bg-[#fcd535] hover:bg-[#f3ca26] text-gray-900 font-bold py-3.5 rounded-xl transition-colors flex justify-center items-center gap-2"
+            :disabled="loading"
+          >
             <span
               v-if="loading"
               class="material-symbols-outlined text-[18px] animate-spin"
@@ -174,11 +195,6 @@ const handleLogin = () => {
             <span>{{ loading ? "Submitting..." : "Submit" }}</span>
           </button>
         </form>
-
-        <!-- Sign Up Link -->
-        <div class="mt-6 text-center text-sm text-gray-500 dark:text-secondary-text">
-          Don't have an account? <a href="#" class="text-gray-900 dark:text-primary-text font-bold hover:underline">Sign Up</a>
-        </div>
       </div>
     </div>
   </div>
