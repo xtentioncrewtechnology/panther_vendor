@@ -6,8 +6,7 @@
     <div class="flex items-center gap-6 min-w-0">
       <!-- Logo -->
       <div class="font-bold text-lg text-primary-text tracking-tight flex items-center gap-2">
-        <span class="text-primary material-symbols-outlined">storefront</span>
-        <span class="hidden sm:inline">Vendor Portal</span>
+        <img src="/2.png" alt="Veyntro Logo" class="h-8" />
       </div>
 
     </div>
