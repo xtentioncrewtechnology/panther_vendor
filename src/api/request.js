@@ -11,9 +11,9 @@ const getDefaultApiHost = () => {
 };
 
 const getBaseURL = () => {
-  // Use Vercel rewrite in production to avoid CORS and hide the backend domain
+  // Uses Vercel rewrite to show this domain in requests, proxying to admin.panthercapitals.com behind the scenes
   return import.meta.env.PROD 
-    ? "/api/admin/" 
+    ? "https://vender-portal-payment.vercel.app/api/admin/" 
     : "https://admin.panthercapitals.com/admin/";
 };
 
