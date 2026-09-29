@@ -11,12 +11,7 @@ const getDefaultApiHost = () => {
 };
 
 const getBaseURL = () => {
-  const customUrl = localStorage.getItem("custom_base_url") || getDefaultApiHost();
-  if (customUrl) {
-    const base = customUrl.endsWith("/") ? customUrl.slice(0, -1) : customUrl;
-    return `${base}/admin/`;
-  }
-  return "/admin/";
+  return "https://admin.panthercapitals.com/admin/";
 };
 
 const DEFAULT_TIMEOUT = 2 * 60 * 1000;
