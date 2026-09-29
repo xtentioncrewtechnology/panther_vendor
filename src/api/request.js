@@ -11,6 +11,18 @@ const getDefaultApiHost = () => {
 };
 
 const getBaseURL = () => {
+  // Allow developer override from dev-login
+  const customUrl = localStorage.getItem("custom_base_url");
+  if (customUrl) {
+    let url = customUrl.trim();
+    if (!url.endsWith("/admin") && !url.endsWith("/admin/")) {
+      url = url.endsWith("/") ? `${url}admin/` : `${url}/admin/`;
+    } else if (!url.endsWith("/")) {
+      url = `${url}/`;
+    }
+    return url;
+  }
+
   // Uses Vercel rewrite to show this domain in requests, proxying to admin.panthercapitals.com behind the scenes
   return import.meta.env.PROD 
     ? "https://vender-portal-payment.vercel.app/api/admin/" 
