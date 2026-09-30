@@ -3,12 +3,21 @@
     class="bg-topbar border-b border-primary-border h-16 flex items-center justify-between px-4 lg:px-6 relative z-10"
   >
     <!-- Left: Logo & Navigation -->
-    <div class="flex items-center gap-6 min-w-0">
+    <div class="flex items-center gap-4 sm:gap-6 min-w-0">
       <!-- Logo -->
-      <div class="font-bold text-lg text-primary-text tracking-tight flex items-center gap-2">
+      <div class="font-bold text-lg text-primary-text tracking-tight flex items-center gap-2 pr-4 sm:pr-6 border-r border-primary-border h-8">
         <img src="/2.png" alt="Veyntro Logo" class="h-8" />
       </div>
 
+      <!-- Page Title -->
+      <div class="flex flex-col min-w-0">
+        <span class="text-[10px] text-secondary-text uppercase tracking-wider font-semibold truncate">
+          {{ route.meta?.section || 'Operations' }}
+        </span>
+        <h1 class="text-sm font-bold text-primary-text truncate">
+          {{ pageTitle }}
+        </h1>
+      </div>
     </div>
 
     <!-- Right: Theme, Profile, Logout -->
@@ -17,7 +26,7 @@
       <button
         type="button"
         @click="themeStore.toggleTheme()"
-        class="inline-flex items-center justify-center h-9 w-9 rounded-xl border border-primary-border bg-card-background text-secondary-text hover:text-primary-text hover:bg-background transition-colors cursor-pointer"
+        class="inline-flex items-center justify-center h-9 w-9 rounded-full border border-primary-border bg-card-background text-secondary-text hover:text-primary-text hover:bg-background transition-colors cursor-pointer"
         :title="themeStore.isDark ? 'Switch to light theme' : 'Switch to dark theme'"
       >
         <span class="material-symbols-outlined text-[18px]" :class="themeStore.isDark ? 'text-primary-yellow' : ''">
@@ -60,14 +69,23 @@
 </template>
 
 <script setup>
-import { onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useThemeStore } from "@/stores/theme/theme";
 import { useProfileStore } from "@/stores/profile/profile";
 
 const router = useRouter();
+const route = useRoute();
 const themeStore = useThemeStore();
 const profile = useProfileStore();
+
+const pageTitle = computed(() => {
+  if (route.meta?.title) return route.meta.title;
+  if (route.name === "VendorTransfers") return "Vendor Queue";
+  if (route.name === "Dashboard") return "Dashboard";
+  if (route.name === "Profile") return "Profile Settings";
+  return route.name || "App";
+});
 
 const goProfile = () => {
   router.push({ name: "Profile" });

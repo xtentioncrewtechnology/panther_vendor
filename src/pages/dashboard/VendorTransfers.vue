@@ -1,13 +1,9 @@
 <template>
   <div class="flex flex-col h-full gap-3">
-    <!-- Page header -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="section-label mb-1">Operations</p>
-        <h1 class="page-title">Vendor Queue</h1>
-        <p class="page-subtitle">
-          Review assigned bank-transfer deposits and withdrawals, then complete or reject.
-        </p>
+    <!-- Top Controls -->
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex items-center">
+        <!-- Optional: Left aligned controls if needed in future -->
       </div>
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -76,8 +72,9 @@
       </div>
     </div>
 
-    <!-- Data Table -->
-    <DataTable
+    <!-- Desktop Data Table -->
+    <div class="hidden lg:block">
+      <DataTable
       :data="transfers"
       :columns="columns"
       :loading="loading"
@@ -292,6 +289,172 @@
         </div>
       </template>
     </DataTable>
+    </div>
+
+    <!-- Mobile / Tablet Card View -->
+    <div class="flex lg:hidden flex-col gap-4 mt-4 pb-4">
+      <div v-if="loading" class="flex justify-center p-8">
+        <span class="material-symbols-outlined text-[24px] text-primary animate-spin">refresh</span>
+      </div>
+      <EmptyState
+        v-else-if="!transfers.length"
+        :icon="fetchError ? 'error' : hasActiveFilters ? 'filter_alt_off' : 'inbox'"
+        :title="emptyStateTitle"
+        :description="emptyStateDescription"
+      >
+        <template #action>
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <button v-if="hasActiveFilters" type="button" class="btn-secondary" @click="clearFilters">Clear filters</button>
+            <button type="button" class="btn-primary" @click="fetchTransfers">Refresh</button>
+          </div>
+        </template>
+      </EmptyState>
+
+      <div
+        v-else
+        v-for="row in transfers"
+        :key="row.id"
+        class="bg-background border border-primary-border rounded-xl p-4 flex flex-col gap-3 shadow-sm relative overflow-hidden"
+      >
+        <!-- Top row: Status and ID -->
+        <div class="flex justify-between items-start gap-2">
+          <div class="flex flex-col gap-1 items-start">
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide uppercase border"
+              :class="statusBadgeClass(row.status)"
+            >
+              {{ row.status }}
+            </span>
+            <span
+              v-if="isAwaitingAdmin(row)"
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-[9px] font-semibold border border-primary-yellow/30 bg-primary-yellow/10 text-primary-yellow"
+            >
+              Awaiting admin
+            </span>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] font-mono text-primary-text">{{ formatDate(row.created_at) }}</div>
+            <div class="text-[10px] text-secondary-text mt-0.5">PR #{{ row.payment_request_id || row.payment_request?.id || "—" }}</div>
+          </div>
+        </div>
+
+        <!-- Main Info -->
+        <div class="flex justify-between items-center gap-2 mt-1">
+          <div>
+            <div class="font-bold text-primary-text text-base tabular-nums">
+              {{ formatMoney(row.payment_request?.paid_amount) }} {{ row.payment_request?.paid_currency }}
+            </div>
+            <div class="text-[11px] text-secondary-text mt-0.5 capitalize">
+              {{ row.payment_request?.type || "—" }} · {{ row.payment_request?.method || row.payment_request?.gateway || "—" }}
+            </div>
+          </div>
+          <div class="text-right flex flex-col items-end">
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold capitalize border"
+              :class="paymentStatusClass(row.payment_request?.payment_status)"
+            >
+              {{ row.payment_request?.payment_status || "—" }}
+            </span>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium capitalize border border-primary-border text-secondary-text bg-card-background mt-1"
+            >
+              {{ row.payment_request?.approval_status || "—" }}
+            </span>
+          </div>
+        </div>
+
+        <div class="h-px bg-primary-border my-1" />
+
+        <!-- Bank Details -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="min-w-0" v-if="isDeposit(row)">
+            <div class="text-[10px] text-secondary-text uppercase tracking-wide font-semibold mb-1">Company Bank</div>
+            <div class="font-medium text-primary-text text-xs truncate">
+              {{ row.payment_request?.bank?.company_bank?.bank_name || row.payment_request?.bank?.bank || "Company bank" }}
+            </div>
+            <div class="text-[11px] text-secondary-text mt-0.5 truncate">
+              UTR: {{ row.payment_request?.bank?.utr || row.payment_request?.txid || "—" }}
+            </div>
+          </div>
+          <div class="min-w-0" v-else>
+            <div class="text-[10px] text-secondary-text uppercase tracking-wide font-semibold mb-1">User Bank</div>
+            <div class="font-medium text-primary-text text-xs truncate">
+              {{ row.payment_request?.bank?.bank || "—" }}
+            </div>
+            <div class="text-[11px] text-secondary-text mt-0.5 truncate">
+              {{ row.payment_request?.bank?.account_name || "—" }}
+            </div>
+            <div class="text-[11px] text-secondary-text font-mono mt-0.5">
+              {{ row.payment_request?.bank?.account_number || "—" }}
+            </div>
+          </div>
+
+          <!-- Proof -->
+          <div class="min-w-0 flex flex-col gap-1.5">
+            <div class="text-[10px] text-secondary-text uppercase tracking-wide font-semibold mb-0.5">Proof</div>
+            <div class="flex items-center gap-1.5 text-[11px]">
+              <span class="material-symbols-outlined text-[14px]" :class="row.proof_url ? 'text-primary-green' : 'text-secondary-text'">
+                {{ row.proof_url ? "check_circle" : "radio_button_unchecked" }}
+              </span>
+              <span class="truncate" :class="row.proof_url ? 'text-primary-text' : 'text-secondary-text'">
+                {{ row.proof_url ? truncateText(row.proof_url, 18) : "No UTR" }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px]">
+              <span class="material-symbols-outlined text-[14px]" :class="row.proof_attachment_url ? 'text-primary-green' : 'text-secondary-text'">
+                {{ row.proof_attachment_url ? "attach_file" : "attach_file_off" }}
+              </span>
+              <button
+                v-if="row.proof_attachment_url"
+                type="button"
+                class="text-primary-blue hover:underline font-medium cursor-pointer truncate"
+                @click.stop="openProofPreview(row.proof_attachment_url, row.proof_attachment)"
+              >
+                View file
+              </button>
+              <span v-else class="text-secondary-text truncate">No attachment</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-px bg-primary-border my-1" v-if="row.status === 'assigned'" />
+
+        <!-- Actions -->
+        <div class="flex gap-2 w-full pt-1" v-if="row.status === 'assigned'">
+          <button
+            v-if="!isAwaitingAdmin(row)"
+            type="button"
+            @click="openProcessModal(row)"
+            class="flex-1 h-9 rounded-lg bg-primary text-btn-text-primary text-xs font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer flex items-center justify-center"
+          >
+            Approve
+          </button>
+          <span
+            v-else
+            class="flex-1 h-9 flex items-center justify-center rounded-lg border border-primary-yellow/30 bg-primary-yellow/5 text-primary-yellow text-xs font-semibold"
+          >
+            Awaiting admin
+          </span>
+          <button
+            v-if="isDeposit(row)"
+            type="button"
+            @click="openRejectModal(row)"
+            class="flex-1 h-9 rounded-lg border border-primary-red/30 bg-primary-red/5 text-primary-red text-xs font-semibold hover:bg-primary-red/10 transition-colors cursor-pointer flex items-center justify-center"
+          >
+            Reject
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Pagination -->
+      <div v-if="!loading && transfers.length > 0" class="flex justify-between items-center bg-background border border-primary-border p-3 rounded-xl mt-1 shadow-sm">
+         <span class="text-[11px] font-medium text-secondary-text">Page {{ pagination.page }} of {{ Math.ceil(pagination.total / pagination.per_page) }}</span>
+         <div class="flex gap-1.5">
+           <button class="px-3 py-1.5 rounded-lg border border-primary-border bg-card-background text-xs font-medium disabled:opacity-50 cursor-pointer" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Prev</button>
+           <button class="px-3 py-1.5 rounded-lg border border-primary-border bg-card-background text-xs font-medium disabled:opacity-50 cursor-pointer" :disabled="pagination.page * pagination.per_page >= pagination.total" @click="changePage(pagination.page + 1)">Next</button>
+         </div>
+      </div>
+    </div>
 
     <VendorTransferModals
       :type="modalType"
