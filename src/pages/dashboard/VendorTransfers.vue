@@ -447,12 +447,15 @@
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-primary-text">
               UTR / Remittance
-              <span class="text-primary-red">*</span>
+              <span
+                v-if="!isDeposit(activeTransfer)"
+                class="text-primary-red"
+              >*</span>
             </label>
             <p class="text-[11px] text-secondary-text">
               {{
                 isDeposit(activeTransfer)
-                  ? "Required to confirm — enter bank UTR number or remittance link"
+                  ? "Optional — user UTR/proof on the request is enough to credit"
                   : "Required — enter bank UTR number or remittance link"
               }}
             </p>
@@ -858,7 +861,7 @@ const processModalSubtitle = computed(() => {
   if (depositAmountChanged.value) {
     return "Amount changed — save to send this deposit to admin for approval before credit";
   }
-  return "Verify user UTR, then credit the account (attachment optional)";
+  return "Confirm amount to credit (vendor UTR/proof optional if user already sent UTR/proof)";
 });
 
 const amountBaseline = ref(null);
@@ -1204,16 +1207,29 @@ const rejectForm = reactive({
   rejection_reason: "",
 });
 
+const userDepositHasProof = (transfer) => {
+  const bank = transfer?.payment_request?.bank;
+  const pr = transfer?.payment_request;
+  if ((bank?.utr || pr?.txid || "").toString().trim()) return true;
+  if ((bank?.deposit_proof_url || "").toString().trim()) return true;
+  return false;
+};
+
+const depositHasAnyProof = (transfer) => {
+  if (userDepositHasProof(transfer)) return true;
+  if (processForm.proof_url?.trim() || transfer?.proof_url) return true;
+  if (processForm.proof || transfer?.proof_attachment_url) return true;
+  return false;
+};
+
 const isFormValid = computed(() => {
   if (depositAmountChanged.value) return false;
 
   if (isDeposit(activeTransfer.value)) {
     const amount = Number(processForm.amount_inr);
     const hasAmount = Number.isFinite(amount) && amount > 0;
-    const hasUtr =
-      !!processForm.proof_url?.trim() || !!activeTransfer.value?.proof_url;
-    // Attachment optional for deposits — UTR + amount required
-    return hasAmount && hasUtr;
+    // Amount required; vendor UTR optional when user UTR/proof (or vendor proof) exists
+    return hasAmount && depositHasAnyProof(activeTransfer.value);
   }
 
   const hasUtr = !!processForm.proof_url?.trim();
@@ -1234,7 +1250,7 @@ const submitDisabledReason = computed(() => {
     if (!Number.isFinite(amount) || amount <= 0) {
       return "Enter a valid amount greater than 0";
     }
-    return "Enter UTR to confirm";
+    return "Add UTR or proof (user has none on this request)";
   }
 
   const hasUtr = !!processForm.proof_url?.trim();

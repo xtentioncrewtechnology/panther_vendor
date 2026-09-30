@@ -7,7 +7,7 @@ User deposit or withdrawal
   → PR processing + VendorTransfer assigned
   → Admin and vendor both see processing
 
-Deposit (amount unchanged): Confirm → credit
+Deposit (amount unchanged): Confirm → credit (vendor UTR optional if user already sent UTR/proof)
 Deposit (amount changed): Save amount → awaiting admin → admin approve → credit
 Withdrawal: Complete with UTR/proof → done
 
