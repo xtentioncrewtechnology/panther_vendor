@@ -1,17 +1,24 @@
 <template>
-    <!-- Process Modal -->
-    <div
-      v-if="type === 'process'"
-      class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] p-4"
-      style="background-color: var(--app-overlay)"
-      @click.self="closeModal"
-    >
+    <!-- Process Modal Drawer -->
+    <Transition name="backdrop">
       <div
-        class="modal-panel w-full h-full sm:h-auto sm:max-w-lg flex flex-col sm:max-h-[90vh] rounded-none sm:rounded-2xl"
+        v-if="type === 'process'"
+        class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-xs cursor-pointer"
+        @click="closeModal"
+      />
+    </Transition>
+
+    <Transition name="drawer">
+      <div
+        v-if="type === 'process'"
+        class="fixed right-0 top-0 bottom-0 z-[101] w-full max-w-xl bg-card-background border-l border-primary-border flex flex-col shadow-2xl overflow-hidden"
+        role="dialog"
+        aria-modal="true"
       >
-        <div class="modal-header">
+        <!-- Sticky Header -->
+        <div class="px-6 py-4.5 border-b border-primary-border flex items-center justify-between shrink-0 bg-card-background/90 backdrop-blur-md">
           <div>
-            <h3 class="title-text">
+            <h3 class="text-sm font-bold text-primary-text">
               {{ isDeposit(activeTransfer) ? "Confirm deposit" : "Complete payment" }}
             </h3>
             <p class="text-[11px] text-secondary-text mt-0.5">
@@ -20,70 +27,104 @@
           </div>
           <button
             type="button"
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-background text-secondary-text hover:text-primary-text transition cursor-pointer"
             @click="closeModal"
-            class="text-secondary-text hover:text-primary-text transition-colors cursor-pointer p-1 rounded-lg hover:bg-background"
             aria-label="Close"
           >
             <span class="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        <div class="p-4 sm:p-5 flex flex-col gap-4 overflow-y-auto">
-          <!-- Remittance summary -->
-          <div
-            class="bg-background p-3 rounded-xl flex flex-col gap-2 border border-primary-border"
-          >
-            <div class="flex justify-between gap-4 text-xs">
-              <span class="text-secondary-text shrink-0">User</span>
+        <div class="p-4 sm:p-6 flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar">
+          <div class="bg-background p-4 rounded-xl flex flex-col gap-3 border border-primary-border">
+            
+            <!-- USER -->
+            <div class="flex justify-between gap-4 text-xs items-center">
+              <span class="text-secondary-text shrink-0">User Name</span>
               <span class="text-primary-text font-medium text-right">
                 {{ activeTransfer?.payment_request?.user_name }}
-                <span class="block text-[11px] text-secondary-text font-normal mt-0.5">
-                  {{ activeTransfer?.payment_request?.user_email }}
-                </span>
               </span>
             </div>
-            <div class="h-px bg-primary-border" />
-            <div class="flex justify-between gap-4 text-xs items-center" v-if="!isDeposit(activeTransfer)">
-              <span class="text-secondary-text">Amount to pay</span>
+
+            <!-- AMOUNT -->
+            <div class="flex justify-between gap-4 text-xs items-center">
+              <span class="text-secondary-text shrink-0">
+                {{ isDeposit(activeTransfer) ? "Expected amount" : "Amount to pay" }}
+              </span>
               <span class="text-primary-yellow font-bold text-base tabular-nums">
                 {{ formatMoney(activeTransfer?.payment_request?.paid_amount) }}
                 {{ activeTransfer?.payment_request?.paid_currency }}
               </span>
             </div>
-            <div class="h-px bg-primary-border" v-if="!isDeposit(activeTransfer)" />
-            <div class="flex justify-between gap-4 text-xs" v-if="isDeposit(activeTransfer)">
-              <span class="text-secondary-text shrink-0">User UTR</span>
-              <span class="text-primary-text text-right font-mono">
-                {{ activeTransfer?.payment_request?.bank?.utr
-                  || activeTransfer?.payment_request?.txid
-                  || "—" }}
-              </span>
-            </div>
-            <div class="flex justify-between gap-4 text-xs" v-if="isDeposit(activeTransfer) && activeTransfer?.payment_request?.bank?.deposit_proof_url">
-              <span class="text-secondary-text shrink-0">User proof</span>
-              <button
-                type="button"
-                class="text-primary-blue text-xs font-medium hover:underline cursor-pointer"
-                @click="emit('open-preview', activeTransfer.payment_request.bank.deposit_proof_url)"
-              >
-                View
-              </button>
-            </div>
-            <div class="flex justify-between gap-4 text-xs" v-if="!isDeposit(activeTransfer)">
-              <span class="text-secondary-text shrink-0">Bank</span>
-              <span class="text-primary-text text-right leading-relaxed">
-                {{ activeTransfer?.payment_request?.bank?.bank }}<br />
-                {{ activeTransfer?.payment_request?.bank?.account_name }}<br />
-                <span class="text-secondary-text text-[11px] font-mono">
-                  {{ activeTransfer?.payment_request?.bank?.account_number }}
+            
+            <div class="h-px bg-primary-border" />
+
+            <!-- UTR & PROOF (Deposit Only) -->
+            <template v-if="isDeposit(activeTransfer)">
+              <div class="flex justify-between gap-4 text-xs items-center">
+                <span class="text-secondary-text shrink-0">User UTR</span>
+                <span class="text-primary-text text-right font-mono">
+                  {{ activeTransfer?.payment_request?.txid }}
                 </span>
-                <template v-if="activeTransfer?.payment_request?.bank?.bank_branch_code">
-                  <br />
-                  <span class="text-secondary-text text-[11px]">
-                    IFSC: {{ activeTransfer.payment_request.bank.bank_branch_code }}
-                  </span>
-                </template>
+              </div>
+              <div class="flex justify-between gap-4 text-xs items-center" v-if="activeTransfer?.payment_request?.bank?.deposit_proof_url">
+                <span class="text-secondary-text shrink-0">User proof</span>
+                <button
+                  type="button"
+                  class="text-primary-blue text-xs font-medium hover:underline cursor-pointer"
+                  @click="emit('open-preview', activeTransfer.payment_request.bank.deposit_proof_url)"
+                >
+                  View document
+                </button>
+              </div>
+              <div class="h-px bg-primary-border" />
+            </template>
+
+            <!-- BANK DETAILS -->
+            <div class="flex flex-col gap-3">
+              <span class="text-xs font-bold text-primary-text uppercase tracking-wider opacity-80 mt-1">
+                {{ isDeposit(activeTransfer) ? "Company Bank Details" : "User Bank Details" }}
               </span>
+              
+              <!-- Deposit: Company Bank -->
+              <template v-if="isDeposit(activeTransfer) && activeTransfer?.payment_request?.bank?.company_bank">
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">Bank Name</span>
+                  <span class="text-primary-text text-right font-medium">{{ activeTransfer.payment_request.bank.company_bank.bank_name }}</span>
+                </div>
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">Account Name</span>
+                  <span class="text-primary-text text-right">{{ activeTransfer.payment_request.bank.company_bank.account_name }}</span>
+                </div>
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">Account Number</span>
+                  <span class="text-primary-text text-right font-mono">{{ activeTransfer.payment_request.bank.company_bank.account_number }}</span>
+                </div>
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">IFSC Code</span>
+                  <span class="text-primary-text text-right font-mono">{{ activeTransfer.payment_request.bank.company_bank.ifsc_code }}</span>
+                </div>
+              </template>
+
+              <!-- Withdrawal: User Bank -->
+              <template v-else-if="!isDeposit(activeTransfer)">
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">Bank Name</span>
+                  <span class="text-primary-text text-right font-medium">{{ activeTransfer?.payment_request?.bank?.bank }}</span>
+                </div>
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">Account Name</span>
+                  <span class="text-primary-text text-right">{{ activeTransfer?.payment_request?.bank?.account_name }}</span>
+                </div>
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">Account Number</span>
+                  <span class="text-primary-text text-right font-mono">{{ activeTransfer?.payment_request?.bank?.account_number }}</span>
+                </div>
+                <div class="flex justify-between gap-4 text-xs items-center">
+                  <span class="text-secondary-text shrink-0">IFSC Code</span>
+                  <span class="text-primary-text text-right font-mono">{{ activeTransfer?.payment_request?.bank?.bank_branch_code }}</span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -284,10 +325,10 @@
           </div>
         </div>
 
-        <div class="modal-footer flex-col-reverse sm:flex-row">
+        <div class="px-6 py-4 border-t border-primary-border bg-card-background flex flex-col-reverse sm:flex-row gap-3 shrink-0">
           <button
             type="button"
-            class="btn-secondary"
+            class="btn-secondary flex-1 justify-center"
             :disabled="isSubmitting || !canSaveDraft"
             @click="saveDraft"
           >
@@ -301,7 +342,7 @@
           </button>
           <button
             type="button"
-            class="btn-primary"
+            class="btn-primary flex-1 justify-center"
             :disabled="isSubmitting || !isFormValid || depositAmountChanged"
             :title="submitDisabledReason"
             @click="submitTransfer"
@@ -316,26 +357,33 @@
           </button>
         </div>
       </div>
-    </div>
+    </Transition>
 
-    <!-- Reject Modal -->
-    <div
-      v-if="type === 'reject'"
-      class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] p-4"
-      style="background-color: var(--app-overlay)"
-      @click.self="closeModal()"
-    >
-      <div class="modal-panel w-full h-full sm:h-auto sm:max-w-md flex flex-col rounded-none sm:rounded-2xl">
-        <div class="modal-header">
+    <!-- Reject Drawer -->
+    <Transition name="backdrop">
+      <div
+        v-if="type === 'reject'"
+        class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-xs cursor-pointer"
+        @click="closeModal"
+      />
+    </Transition>
+    <Transition name="drawer">
+      <div
+        v-if="type === 'reject'"
+        class="fixed right-0 top-0 bottom-0 z-[101] w-full max-w-md bg-card-background border-l border-primary-border flex flex-col shadow-2xl overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div class="px-6 py-4.5 border-b border-primary-border flex items-center justify-between shrink-0 bg-card-background/90 backdrop-blur-md">
           <div>
-            <h3 class="title-text text-primary-red">
+            <h3 class="text-sm font-bold text-primary-red">
               {{
                 isDeposit(activeTransfer)
                   ? "Reject Deposit"
                   : "Reject Withdrawal"
               }}
             </h3>
-            <p class="text-xs text-secondary-text mt-0.5">
+            <p class="text-[11px] text-secondary-text mt-0.5">
               {{
                 isDeposit(activeTransfer)
                   ? "Deposit will be rejected (no funds were credited yet)"
@@ -345,20 +393,19 @@
           </div>
           <button
             type="button"
-            @click="closeModal()"
-            class="text-secondary-text hover:text-primary-text transition-colors cursor-pointer p-1 rounded-lg hover:bg-background"
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-background text-secondary-text hover:text-primary-text transition cursor-pointer"
+            @click="closeModal"
             aria-label="Close"
           >
             <span class="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        <div class="p-5 flex flex-col gap-4">
+        <div class="p-6 flex flex-col gap-4 overflow-y-auto flex-1 custom-scrollbar">
           <p class="text-xs text-secondary-text leading-relaxed">
-            Reject transfer for
-            <span class="font-semibold text-primary-text">
-              {{ activeTransfer?.payment_request?.user_name }}
-            </span>?
+            Reject this <span class="font-semibold text-primary-text">{{ isDeposit(activeTransfer) ? 'deposit' : 'withdrawal' }}</span> of
+            <span class="font-semibold text-primary-yellow tabular-nums">
+              {{ formatMoney(activeTransfer?.payment_request?.paid_amount) }} {{ activeTransfer?.payment_request?.paid_currency }}</span>?
             This cannot be undone from this screen.
           </p>
 
@@ -379,17 +426,17 @@
           </div>
         </div>
 
-        <div class="modal-footer flex-col-reverse sm:flex-row">
+        <div class="px-6 py-4 border-t border-primary-border bg-card-background flex flex-col-reverse sm:flex-row gap-3 shrink-0">
           <button
             type="button"
-            class="btn-secondary"
-            @click="closeModal()"
+            class="btn-secondary flex-1 justify-center"
+            @click="closeModal"
           >
             Cancel
           </button>
           <button
             type="button"
-            class="btn-danger"
+            class="btn-danger flex-1 justify-center"
             :disabled="isSubmitting || !rejectForm.rejection_reason?.trim()"
             @click="rejectTransfer"
           >
@@ -397,7 +444,7 @@
           </button>
         </div>
       </div>
-    </div>
+    </Transition>
 
 </template>
 
