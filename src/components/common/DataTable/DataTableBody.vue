@@ -232,6 +232,7 @@
 import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
 
 import DropdownMenu from '@/components/common/DropdownMenu.vue'
+import { ExternalLink } from "lucide-vue-next";
 import { formatCellValue } from './utils'
 
 const props = defineProps({

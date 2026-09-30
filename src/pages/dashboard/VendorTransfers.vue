@@ -39,9 +39,28 @@
             @update:modelValue="onFilterChange"
           />
         </div>
+        <div class="w-full sm:w-60">
+          <BaseDatePicker
+            v-model="filters.dateRange"
+            mode="range"
+            placeholder="Select date range"
+            :maxDate="new Date()"
+            variant="surface"
+            triggerClass="py-2"
+            @update:modelValue="onFilterChange"
+          />
+        </div>
+        <button
+          v-if="hasActiveFilters"
+          type="button"
+          class="bg-card-background border border-primary-border rounded-xl px-4 py-2 text-primary-text text-sm hover:bg-primary/5 transition-colors flex items-center justify-center"
+          @click="clearFilters"
+        >
+          Clear
+        </button>
         <button
           type="button"
-          class="btn-secondary shrink-0"
+          class="bg-card-background border border-primary-border rounded-xl p-1 text-secondary-text hover:bg-primary/5 transition-colors flex items-center justify-center"
           title="Refresh list"
           aria-label="Refresh list"
           :disabled="loading"
@@ -53,7 +72,6 @@
           >
             refresh
           </span>
-          <span>Refresh</span>
         </button>
       </div>
     </div>
@@ -65,9 +83,6 @@
       :loading="loading"
       :pagination="pagination"
       row-key="id"
-      :has-actions="true"
-      :actions-sticky="true"
-      :actions-width="160"
       empty-title="No transfers"
       empty-text="There are no transfers for this status."
       @page-change="changePage"
@@ -99,18 +114,6 @@
       <template #cell-created_at="{ row }">
         <div class="text-primary-text whitespace-nowrap">
           {{ formatDate(row.created_at) }}
-        </div>
-      </template>
-
-      <template #cell-user="{ row }">
-        <div class="min-w-0">
-          <div class="font-semibold text-primary-text truncate">
-            {{ row.payment_request?.user_name || "—" }}
-          </div>
-          <div class="text-xs text-secondary-text truncate mt-0.5">
-            {{ row.payment_request?.user_email || "—" }}
-          </div>
-         
         </div>
       </template>
 
@@ -242,14 +245,6 @@
             </button>
             <span v-else class="text-secondary-text">No attachment</span>
           </div>
-          <button
-            v-if="row.status === 'assigned' && !isAwaitingAdmin(row) && (!row.proof_url || !row.proof_attachment_url)"
-            type="button"
-            class="mt-0.5 self-start text-xs font-semibold text-primary-yellow hover:underline cursor-pointer"
-            @click.stop="openProcessModal(row)"
-          >
-            Add proof
-          </button>
         </div>
       </template>
 
@@ -270,7 +265,7 @@
         </div>
       </template>
 
-      <template #actions="{ row }">
+      <template #cell-actions="{ row }">
         <div class="flex flex-col sm:flex-row justify-end gap-1.5 sm:gap-2 flex-wrap" v-if="row.status === 'assigned'">
           <button
             v-if="!isAwaitingAdmin(row)"
@@ -278,10 +273,7 @@
             @click="openProcessModal(row)"
             class="h-8 px-2.5 sm:px-3 rounded-lg bg-primary text-btn-text-primary text-xs font-semibold hover:bg-primary-hover transition-colors shadow-sm cursor-pointer whitespace-nowrap"
           >
-            <span class="sm:hidden">{{ isDeposit(row) ? "Confirm" : "Complete" }}</span>
-            <span class="hidden sm:inline">
-              {{ isDeposit(row) ? "Confirm deposit" : "Complete payment" }}
-            </span>
+            Approve
           </button>
           <span
             v-else
@@ -290,6 +282,7 @@
             Awaiting admin
           </span>
           <button
+            v-if="isDeposit(row)"
             type="button"
             @click="openRejectModal(row)"
             class="h-8 px-2.5 sm:px-3 rounded-lg border border-primary-red/30 bg-primary-red/5 text-primary-red text-xs font-semibold hover:bg-primary-red/10 transition-colors cursor-pointer"
@@ -300,402 +293,13 @@
       </template>
     </DataTable>
 
-    <!-- Process Modal -->
-    <div
-      v-if="showProcessModal"
-      class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] p-4"
-      style="background-color: var(--app-overlay)"
-      @click.self="closeProcessModal"
-    >
-      <div
-        class="modal-panel max-w-lg flex flex-col max-h-[90vh]"
-      >
-        <div class="modal-header">
-          <div>
-            <h3 class="title-text">
-              {{ isDeposit(activeTransfer) ? "Confirm deposit" : "Complete payment" }}
-            </h3>
-            <p class="text-[11px] text-secondary-text mt-0.5">
-              {{ processModalSubtitle }}
-            </p>
-          </div>
-          <button
-            type="button"
-            @click="closeProcessModal"
-            class="text-secondary-text hover:text-primary-text transition-colors cursor-pointer p-1 rounded-lg hover:bg-background"
-            aria-label="Close"
-          >
-            <span class="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-
-        <div class="p-4 sm:p-5 flex flex-col gap-4 overflow-y-auto">
-          <!-- Remittance summary -->
-          <div
-            class="bg-background p-3 rounded-xl flex flex-col gap-2 border border-primary-border"
-          >
-            <div class="flex justify-between gap-4 text-xs">
-              <span class="text-secondary-text shrink-0">User</span>
-              <span class="text-primary-text font-medium text-right">
-                {{ activeTransfer?.payment_request?.user_name }}
-                <span class="block text-[11px] text-secondary-text font-normal mt-0.5">
-                  {{ activeTransfer?.payment_request?.user_email }}
-                </span>
-              </span>
-            </div>
-            <div class="h-px bg-primary-border" />
-            <div class="flex justify-between gap-4 text-xs items-center" v-if="!isDeposit(activeTransfer)">
-              <span class="text-secondary-text">Amount to pay</span>
-              <span class="text-primary-yellow font-bold text-base tabular-nums">
-                {{ formatMoney(activeTransfer?.payment_request?.paid_amount) }}
-                {{ activeTransfer?.payment_request?.paid_currency }}
-              </span>
-            </div>
-            <div class="h-px bg-primary-border" v-if="!isDeposit(activeTransfer)" />
-            <div class="flex justify-between gap-4 text-xs" v-if="isDeposit(activeTransfer)">
-              <span class="text-secondary-text shrink-0">User UTR</span>
-              <span class="text-primary-text text-right font-mono">
-                {{ activeTransfer?.payment_request?.bank?.utr
-                  || activeTransfer?.payment_request?.txid
-                  || "—" }}
-              </span>
-            </div>
-            <div class="flex justify-between gap-4 text-xs" v-if="isDeposit(activeTransfer) && activeTransfer?.payment_request?.bank?.deposit_proof_url">
-              <span class="text-secondary-text shrink-0">User proof</span>
-              <button
-                type="button"
-                class="text-primary-blue text-xs font-medium hover:underline cursor-pointer"
-                @click="openProofPreview(activeTransfer.payment_request.bank.deposit_proof_url)"
-              >
-                View
-              </button>
-            </div>
-            <div class="flex justify-between gap-4 text-xs" v-if="!isDeposit(activeTransfer)">
-              <span class="text-secondary-text shrink-0">Bank</span>
-              <span class="text-primary-text text-right leading-relaxed">
-                {{ activeTransfer?.payment_request?.bank?.bank }}<br />
-                {{ activeTransfer?.payment_request?.bank?.account_name }}<br />
-                <span class="text-secondary-text text-[11px] font-mono">
-                  {{ activeTransfer?.payment_request?.bank?.account_number }}
-                </span>
-                <template v-if="activeTransfer?.payment_request?.bank?.bank_branch_code">
-                  <br />
-                  <span class="text-secondary-text text-[11px]">
-                    IFSC: {{ activeTransfer.payment_request.bank.bank_branch_code }}
-                  </span>
-                </template>
-              </span>
-            </div>
-          </div>
-
-          <!-- Deposit amount (edit on demand) -->
-          <div v-if="isDeposit(activeTransfer)" class="flex flex-col gap-1">
-            <div class="flex items-center justify-between gap-2">
-              <label class="text-xs font-semibold text-primary-text">
-                Amount (INR)
-                <span class="text-primary-red">*</span>
-              </label>
-              <button
-                v-if="!isEditingAmount"
-                type="button"
-                class="text-xs font-semibold text-primary-blue hover:underline cursor-pointer"
-                @click="startEditAmount"
-              >
-                Edit amount
-              </button>
-              <button
-                v-else
-                type="button"
-                class="text-xs font-semibold text-secondary-text hover:text-primary-text hover:underline cursor-pointer"
-                @click="cancelEditAmount"
-              >
-                Cancel edit
-              </button>
-            </div>
-            <p class="text-[11px] text-secondary-text">
-              {{
-                isEditingAmount
-                  ? "Changing the amount requires admin approval before credit"
-                  : "Shown as submitted — use Edit amount to change (needs admin approval)"
-              }}
-            </p>
-            <input
-              v-if="isEditingAmount"
-              ref="amountInputRef"
-              v-model="processForm.amount_inr"
-              type="number"
-              min="0"
-              step="0.01"
-              class="input-field px-3 py-2 rounded-xl text-sm"
-            />
-            <div
-              v-else
-              class="input-field px-3 py-2 rounded-xl text-sm tabular-nums text-primary-text pointer-events-none select-text"
-            >
-              {{ formatMoney(processForm.amount_inr) }}
-            </div>
-            <p
-              v-if="depositAmountChanged"
-              class="text-[11px] text-primary-yellow"
-            >
-              Amount changed from
-              {{ formatMoney(originalDepositAmount) }} INR — saving will send this to admin.
-            </p>
-          </div>
-
-          <!-- UTR / Remittance -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-primary-text">
-              UTR / Remittance
-              <span
-                v-if="!isDeposit(activeTransfer)"
-                class="text-primary-red"
-              >*</span>
-            </label>
-            <p class="text-[11px] text-secondary-text">
-              {{
-                isDeposit(activeTransfer)
-                  ? "Optional — user UTR/proof on the request is enough to credit"
-                  : "Required — enter bank UTR number or remittance link"
-              }}
-            </p>
-            <input
-              v-model="processForm.proof_url"
-              type="text"
-              placeholder="e.g. 123456789012 or https://bank.example/utr/..."
-              class="input-field px-3 py-2 rounded-xl text-sm"
-              autocomplete="off"
-            />
-            <p
-              v-if="activeTransfer?.proof_url && !processForm.proof_url"
-              class="text-[11px] text-secondary-text"
-            >
-              Previously saved UTR was cleared from this form.
-            </p>
-          </div>
-
-          <!-- Proof attachment -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-primary-text">
-              Proof attachment
-              <span v-if="!isDeposit(activeTransfer)" class="text-primary-red">*</span>
-            </label>
-            <p class="text-[11px] text-secondary-text">
-              {{
-                isDeposit(activeTransfer)
-                  ? "Optional · PNG, JPG, GIF, WEBP, or PDF · max 10 MB"
-                  : "Required · PNG, JPG, GIF, WEBP, or PDF · max 10 MB"
-              }}
-            </p>
-
-            <div
-              role="button"
-              tabindex="0"
-              class="relative flex flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed px-4 py-4 transition-colors cursor-pointer"
-              :class="
-                isDragging
-                  ? 'border-primary bg-primary/10'
-                  : 'border-primary-border bg-background hover:border-primary/60 hover:bg-primary/5'
-              "
-              @click="openFilePicker"
-              @keydown.enter.prevent="openFilePicker"
-              @keydown.space.prevent="openFilePicker"
-              @dragenter.prevent="isDragging = true"
-              @dragover.prevent="isDragging = true"
-              @dragleave.prevent="onDragLeave"
-              @drop.prevent="onDrop"
-            >
-              <input
-                ref="fileInputRef"
-                type="file"
-                class="hidden"
-                :accept="PROOF_ACCEPT"
-                @change="handleFileChange"
-                @click.stop
-              />
-              <span class="material-symbols-outlined text-secondary-text text-[24px] pointer-events-none">
-                upload_file
-              </span>
-              <span class="text-xs text-secondary-text text-center pointer-events-none">
-                <span class="font-semibold text-primary-text">Choose file</span>
-                or drag & drop here
-              </span>
-            </div>
-
-            <div
-              v-if="processForm.proof"
-              class="flex items-center justify-between gap-2 rounded-xl border border-primary-border bg-background px-3 py-2"
-            >
-              <div class="min-w-0 flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary-green text-[18px]">
-                  draft
-                </span>
-                <div class="min-w-0">
-                  <p class="text-xs font-medium text-primary-text truncate">
-                    {{ processForm.proof.name }}
-                  </p>
-                  <p class="text-[11px] text-secondary-text">
-                    {{ formatFileSize(processForm.proof.size) }}
-                  </p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  class="text-xs font-semibold text-primary-blue hover:underline cursor-pointer"
-                  @click="viewLocalProofFile"
-                >
-                  View
-                </button>
-                <button
-                  type="button"
-                  class="text-xs font-semibold text-primary-red hover:underline cursor-pointer"
-                  @click="clearProofFile"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-
-            <p
-              v-else-if="activeTransfer?.proof_attachment_url"
-              class="text-xs text-primary-green"
-            >
-              Saved attachment:
-              <button
-                type="button"
-                class="underline font-medium cursor-pointer text-primary-green"
-                @click="openProofPreview(activeTransfer.proof_attachment_url, activeTransfer.proof_attachment)"
-              >
-                View document
-              </button>
-              <span class="text-secondary-text"> · upload a new file to replace</span>
-            </p>
-          </div>
-
-          <!-- Note -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-primary-text">
-              Note
-              <span class="text-secondary-text font-normal">(Optional)</span>
-            </label>
-            <textarea
-              v-model="processForm.vendor_note"
-              rows="2"
-              placeholder="e.g. Sent via IMPS"
-              class="input-field px-3 py-2 rounded-xl resize-none text-sm"
-            />
-          </div>
-        </div>
-
-        <div class="modal-footer flex-col-reverse sm:flex-row">
-          <button
-            type="button"
-            class="btn-secondary"
-            :disabled="isSubmitting || !canSaveDraft"
-            @click="saveDraft"
-          >
-            {{
-              isSubmitting
-                ? "Saving..."
-                : depositAmountChanged
-                  ? "Save amount (needs admin)"
-                  : "Save Draft"
-            }}
-          </button>
-          <button
-            type="button"
-            class="btn-primary"
-            :disabled="isSubmitting || !isFormValid || depositAmountChanged"
-            :title="submitDisabledReason"
-            @click="submitTransfer"
-          >
-            {{
-              isSubmitting
-                ? "Submitting..."
-                : isDeposit(activeTransfer)
-                  ? "Confirm deposit"
-                  : "Complete Transfer"
-            }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Reject Modal -->
-    <div
-      v-if="showRejectModal"
-      class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px] p-4"
-      style="background-color: var(--app-overlay)"
-      @click.self="showRejectModal = false"
-    >
-      <div class="modal-panel max-w-md flex flex-col">
-        <div class="modal-header">
-          <div>
-            <h3 class="title-text text-primary-red">Reject Transfer</h3>
-            <p class="text-xs text-secondary-text mt-0.5">
-              {{
-                isDeposit(activeTransfer)
-                  ? "Deposit will be rejected (no funds were credited yet)"
-                  : "Funds will be reversed to the user"
-              }}
-            </p>
-          </div>
-          <button
-            type="button"
-            @click="showRejectModal = false"
-            class="text-secondary-text hover:text-primary-text transition-colors cursor-pointer p-1 rounded-lg hover:bg-background"
-            aria-label="Close"
-          >
-            <span class="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-
-        <div class="p-5 flex flex-col gap-4">
-          <p class="text-xs text-secondary-text leading-relaxed">
-            Reject transfer for
-            <span class="font-semibold text-primary-text">
-              {{ activeTransfer?.payment_request?.user_name }}
-            </span>?
-            This cannot be undone from this screen.
-          </p>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-semibold text-primary-text">
-              Rejection Reason
-              <span class="text-primary-red">*</span>
-            </label>
-            <p class="text-[11px] text-secondary-text">
-              Required — explain why this request is being rejected
-            </p>
-            <textarea
-              v-model="rejectForm.rejection_reason"
-              rows="3"
-              placeholder="Reason for rejection..."
-              class="input-field px-3 resize-none"
-            />
-          </div>
-        </div>
-
-        <div class="modal-footer flex-col-reverse sm:flex-row">
-          <button
-            type="button"
-            class="btn-secondary"
-            @click="showRejectModal = false"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            class="btn-danger"
-            :disabled="isSubmitting || !rejectForm.rejection_reason?.trim()"
-            @click="rejectTransfer"
-          >
-            {{ isSubmitting ? "Rejecting..." : "Reject" }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <VendorTransferModals
+      :type="modalType"
+      :transfer="activeTransfer"
+      @close="modalType = ''"
+      @success="onModalSuccess"
+      @open-preview="openProofPreview"
+    />
     <!-- Proof preview modal -->
     <div
       v-if="showProofPreview"
@@ -783,7 +387,9 @@ import apiRequest from "@/api/request";
 import urls from "@/api/urls";
 import DataTable from "@/components/common/DataTable/DataTable.vue";
 import BaseSelect from "@/components/common/BaseSelect.vue";
+import BaseDatePicker from "@/components/common/BaseDatePicker copy.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
+import VendorTransferModals from "@/components/dashboard/VendorTransferModals.vue";
 import { useSnackbarStore } from "@/stores/snackbar/snackbar";
 
 const snackbar = useSnackbarStore();
@@ -848,6 +454,7 @@ const typeOptions = [
 const filters = reactive({
   status: "assigned",
   type: "",
+  dateRange: [],
 });
 
 const isDeposit = (row) =>
@@ -912,14 +519,14 @@ const pagination = reactive({
 const columns = [
   { key: "id", label: "ID", width: 70 },
   { key: "created_at", label: "Date", width: 150 },
-  { key: "user", label: "User", width: 200 },
   { key: "amount", label: "Amount", width: 150 },
   { key: "type", label: "Type", width: 140 },
   { key: "bank", label: "Bank", width: 220 },
   { key: "reference", label: "Reference", width: 180 },
   { key: "payment_status", label: "Payment", width: 120 },
-  { key: "proof", label: "Proof", width: 180, sticky: "right" },
-  { key: "status", label: "Status", width: 110, sticky: "right" },
+  { key: "proof", label: "Proof", width: 180 },
+  { key: "status", label: "Status", width: 110 },
+  { key: "actions", label: "Actions", width: 160, sticky: "right" },
 ];
 
 const formatDate = (value) => {
@@ -1133,6 +740,10 @@ const fetchTransfers = async () => {
     if (filters.type) {
       params.type = filters.type;
     }
+    if (filters.dateRange && filters.dateRange.length === 2) {
+      params.from_date = filters.dateRange[0];
+      params.to_date = filters.dateRange[1];
+    }
     const res = await apiRequest("get", urls.vendorTransfers.list, {
       params,
     });
@@ -1155,7 +766,7 @@ const fetchTransfers = async () => {
 };
 
 const hasActiveFilters = computed(
-  () => !!filters.type || (filters.status && filters.status !== "assigned"),
+  () => !!filters.type || (filters.status && filters.status !== "assigned") || (filters.dateRange && filters.dateRange.length > 0),
 );
 
 const emptyStateTitle = computed(() => {
@@ -1177,6 +788,7 @@ const emptyStateDescription = computed(() => {
 const clearFilters = () => {
   filters.type = "";
   filters.status = "assigned";
+  filters.dateRange = [];
   pagination.page = 1;
   fetchTransfers();
 };
@@ -1198,6 +810,12 @@ const changePerPage = ({ page, per_page }) => {
 
 const showProcessModal = ref(false);
 const showRejectModal = ref(false);
+const modalType = ref("");
+
+const onModalSuccess = () => {
+  modalType.value = "";
+  fetchTransfers();
+};
 const activeTransfer = ref(null);
 
 const processForm = reactive({
@@ -1357,15 +975,7 @@ const openProcessModal = (item) => {
     return;
   }
   activeTransfer.value = item;
-  processForm.proof_url = item.proof_url || "";
-  processForm.vendor_note = item.vendor_note || "";
-  clearProofFile();
-  const paid = item.payment_request?.paid_amount;
-  processForm.amount_inr = paid != null ? String(paid) : "";
-  amountBaseline.value = paid != null ? Number(paid) : null;
-  isEditingAmount.value = false;
-  isDragging.value = false;
-  showProcessModal.value = true;
+  modalType.value = 'process';
 };
 
 const closeProcessModal = () => {
@@ -1377,8 +987,7 @@ const closeProcessModal = () => {
 
 const openRejectModal = (item) => {
   activeTransfer.value = item;
-  rejectForm.rejection_reason = "";
-  showRejectModal.value = true;
+  modalType.value = 'reject';
 };
 
 const saveDraft = async () => {
