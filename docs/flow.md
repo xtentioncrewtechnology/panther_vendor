@@ -3,20 +3,24 @@
 ```text
 Admin: bank_transfer method → vendor_user_id = staff
 
-User deposit or withdrawal
-  → PR processing + VendorTransfer assigned
-  → Admin and vendor both see processing
+Deposit
+  → User creates → PR processing + VendorTransfer assigned
+  → Vendor sees job immediately
+  → Confirm (UTR optional if user already sent) → credit
+  → Or change amount → awaiting admin → admin approve → credit
 
-Deposit (amount unchanged): Confirm → credit (vendor UTR optional if user already sent UTR/proof)
-Deposit (amount changed): Save amount → awaiting admin → admin approve → credit
-Withdrawal: Complete with UTR/proof → done
+Withdrawal (admin-first)
+  → User creates → PR pending (admin queue only; not in vendor portal yet)
+  → Admin approve → VendorTransfer assigned + PR processing
+  → Vendor Complete with UTR/proof → done
 
-Reject: cancels job; reverses funds only for withdrawals
+Reject (reason required): cancels job; reverses funds only for withdrawals
 ```
 
 ## Dual path
 
-| Method has `vendor_user_id`? | Behaviour |
-|------------------------------|-----------|
-| Yes | Job appears immediately as `processing` |
-| No | Withdrawals need admin first-approve; deposits stay admin-only |
+| Type | `vendor_user_id` set? | Behaviour |
+|------|----------------------|-----------|
+| Deposit | Yes | Job appears in vendor portal as `processing` on create |
+| Deposit | No | Admin-only approve (no vendor row) |
+| Withdrawal | Yes or No | Stays `pending` until admin approve; then vendor portal |

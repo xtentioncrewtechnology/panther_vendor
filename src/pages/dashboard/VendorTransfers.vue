@@ -663,7 +663,11 @@
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-primary-text">
               Rejection Reason
+              <span class="text-primary-red">*</span>
             </label>
+            <p class="text-[11px] text-secondary-text">
+              Required — explain why this request is being rejected
+            </p>
             <textarea
               v-model="rejectForm.rejection_reason"
               rows="3"
@@ -684,7 +688,7 @@
           <button
             type="button"
             class="btn-danger"
-            :disabled="isSubmitting || !rejectForm.rejection_reason"
+            :disabled="isSubmitting || !rejectForm.rejection_reason?.trim()"
             @click="rejectTransfer"
           >
             {{ isSubmitting ? "Rejecting..." : "Reject" }}
@@ -1485,14 +1489,15 @@ const submitTransfer = async () => {
 };
 
 const rejectTransfer = async () => {
-  if (!activeTransfer.value || !rejectForm.rejection_reason) return;
+  const reason = rejectForm.rejection_reason?.trim();
+  if (!activeTransfer.value || !reason) return;
   isSubmitting.value = true;
 
   try {
     const res = await apiRequest("post", urls.vendorTransfers.reject, {
       look_up_key: `${activeTransfer.value.id}/reject`,
       data: {
-        rejection_reason: rejectForm.rejection_reason,
+        rejection_reason: reason,
       },
       onFailure: (err) => {
         snackbar.show(apiErrorMessage(err, "Reject failed"), "error");

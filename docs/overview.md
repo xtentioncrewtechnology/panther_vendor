@@ -2,7 +2,10 @@
 
 ## What it is
 
-Vendor portal for **bank-transfer deposits and withdrawals**. Each bank-transfer payment method can have a connected staff (`vendor_user_id`). When a user submits a request on that method, the job appears in that staff’s queue.
+Vendor portal for **bank-transfer deposits and withdrawals**. Each bank-transfer payment method can have a connected staff (`vendor_user_id`).
+
+- **Deposits** on a connected method appear in that staff’s queue immediately.
+- **Withdrawals** stay in the admin payment-request queue until admin first-approves; then they appear in the vendor portal.
 
 ## Who does what
 
