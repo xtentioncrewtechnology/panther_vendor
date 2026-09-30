@@ -233,10 +233,12 @@ Used by: Complete Transfer / Confirm deposit
 | Field | Required | Notes |
 |-------|----------|--------|
 | `proof` | yes* for withdrawal | *or already saved via PATCH; optional for deposit if user proof exists |
-| `proof_url` or `url` | yes* for withdrawal | *or already saved; optional for deposit |
+| `proof_url` or `url` | yes* for withdrawal | *or already saved; **optional for deposit** when user UTR/proof already on the PR |
 | `vendor_note` or `note` | no | optional |
 
 Blocked for deposits with `vendor_amount_adjusted` while still `pending` (awaiting admin).
+
+Deposit confirm: vendor UTR is optional if the payment request already has user UTR/txid or deposit proof; otherwise attach vendor UTR or proof.
 
 **Effects**
 
