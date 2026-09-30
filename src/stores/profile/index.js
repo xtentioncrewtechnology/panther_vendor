@@ -2,8 +2,8 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import apiRequest from "@/api/request";
 import urls from "@/api/urls";
-import { useSnackbarStore } from "@/stores/snackbar/snackbar";
-import { useMyPermissionsStore } from "@/stores/rbac/myPermissions";
+import { useSnackbarStore } from "@/stores/snackbar";
+import { useMyPermissionsStore } from "@/stores/rbac";
 
 export const useProfileStore = defineStore("user", () => {
   const snackbar = useSnackbarStore();
@@ -11,9 +11,6 @@ export const useProfileStore = defineStore("user", () => {
   const user = ref(null);
   const loading = ref(false);
   const updateLoading = ref(false);
-
-  const dashboard = ref(null);
-  const dashboardLoading = ref(false);
 
   const displayName = computed(() => {
     return user.value?.name || user.value?.email || "Vendor User";
@@ -115,30 +112,7 @@ export const useProfileStore = defineStore("user", () => {
     });
   }
 
-  // ─── Fetch Dashboard ───────────────────────────────
-  function fetchDashboard() {
-    dashboardLoading.value = true;
 
-    const successHandler = (res) => {
-      const data = res?.data || res;
-      dashboard.value = data;
-    };
-
-    const failureHandler = (err) => {
-      console.error("Dashboard fetch error:", err);
-    };
-
-    const finallyHandler = () => {
-      dashboardLoading.value = false;
-    };
-
-    apiRequest("get", urls.dashboard.stats, {
-      isTokenRequired: true,
-      onSuccess: successHandler,
-      onFailure: failureHandler,
-      onFinally: finallyHandler,
-    });
-  }
 
   // ─── Submit FM Registration Request ───────────────
   function submitFmRequest(payload) {
@@ -176,9 +150,6 @@ export const useProfileStore = defineStore("user", () => {
     updateLoading,
     fetchUserProfile,
     updateUserProfile,
-    dashboard,
-    dashboardLoading,
-    fetchDashboard,
     submitFmRequest,
     displayName,
     roleLabel,

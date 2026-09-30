@@ -130,8 +130,8 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useProfileStore } from "@/stores/profile/profile";
-import { useSnackbarStore } from "@/stores/snackbar/snackbar";
+import { useProfileStore } from "@/stores/profile";
+import { useSnackbarStore } from "@/stores/snackbar";
 import EmptyState from "@/components/common/EmptyState.vue";
 
 const router = useRouter();

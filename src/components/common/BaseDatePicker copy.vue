@@ -864,7 +864,7 @@ watch(
       :class="triggerClassList"
     >
       <div class="flex items-center gap-2 truncate min-w-0">
-        <Calendar :size="16" class="flex-shrink-0 text-secondary-text" />
+        <Calendar :size="16" class="shrink-0 text-secondary-text" />
         <span
           :class="[
             'truncate text-sm',
@@ -875,7 +875,7 @@ watch(
         </span>
       </div>
 
-      <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+      <div class="flex items-center gap-1.5 shrink-0 ml-2">
         <X
           v-if="clearable && hasValue && !disabled"
           :size="14"
@@ -898,7 +898,7 @@ watch(
           ref="dropdownRef"
           :style="dropdownStyle"
           :class="[
-            'flex flex-col rounded-xl overflow-hidden border border-primary-border shadow-2xl z-[9999]',
+            'flex flex-col rounded-xl overflow-hidden border border-primary-border shadow-2xl z-9999',
             dropdownBgClass,
           ]"
         >
@@ -932,7 +932,7 @@ watch(
             </div>
 
             <!-- Calendar Container -->
-            <div class="p-4 flex flex-col gap-3 min-w-[280px] sm:min-w-[320px]">
+            <div class="p-4 flex flex-col gap-3 min-w-70 sm:min-w-[320px]">
               <!-- Header -->
               <div class="flex items-center justify-between px-1">
                 <button

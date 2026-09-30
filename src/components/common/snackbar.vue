@@ -29,7 +29,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { useSnackbarStore } from "@/stores/snackbar/snackbar.js";
+import { useSnackbarStore } from "@/stores/snackbar";
 
 const snackbar = useSnackbarStore();
 

@@ -3,7 +3,7 @@
     <Transition name="backdrop">
       <div
         v-if="type === 'process'"
-        class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-xs cursor-pointer"
+        class="fixed inset-0 z-100 bg-black/50 backdrop-blur-xs cursor-pointer"
         @click="closeModal"
       />
     </Transition>
@@ -11,7 +11,7 @@
     <Transition name="drawer">
       <div
         v-if="type === 'process'"
-        class="fixed right-0 top-0 bottom-0 z-[101] w-full max-w-xl bg-card-background border-l border-primary-border flex flex-col shadow-2xl overflow-hidden"
+        class="fixed right-0 top-0 bottom-0 z-101 w-full max-w-xl bg-card-background border-l border-primary-border flex flex-col shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -363,14 +363,14 @@
     <Transition name="backdrop">
       <div
         v-if="type === 'reject'"
-        class="fixed inset-0 z-[100] bg-black/50 backdrop-blur-xs cursor-pointer"
+        class="fixed inset-0 z-100 bg-black/50 backdrop-blur-xs cursor-pointer"
         @click="closeModal"
       />
     </Transition>
     <Transition name="drawer">
       <div
         v-if="type === 'reject'"
-        class="fixed right-0 top-0 bottom-0 z-[101] w-full max-w-md bg-card-background border-l border-primary-border flex flex-col shadow-2xl overflow-hidden"
+        class="fixed right-0 top-0 bottom-0 z-101 w-full max-w-md bg-card-background border-l border-primary-border flex flex-col shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
       >
@@ -452,7 +452,7 @@
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import apiRequest from "@/api/request";
 import urls from "@/api/urls";
-import { useSnackbarStore } from "@/stores/snackbar/snackbar";
+import { useSnackbarStore } from "@/stores/snackbar";
 
 const props = defineProps({
   transfer: { type: Object, default: null },
@@ -714,137 +714,166 @@ const apiErrorMessage = (err, fallback) => {
   );
 };
 
-const saveDraft = async () => {
-  if (!activeTransfer.value || !canSaveDraft.value) return;
+const saveDraft = () => {
+  if (!activeTransfer.value || !canSaveDraft.value) return Promise.resolve();
+  
   isSubmitting.value = true;
   const wasAmountAdjust = depositAmountChanged.value;
 
-  try {
-    let data;
-    let headers = {};
+  let data;
+  let headers = {};
 
-    if (processForm.proof) {
-      data = new FormData();
-      if (processForm.proof_url?.trim()) {
-        data.append("proof_url", processForm.proof_url.trim());
-      }
-      if (processForm.vendor_note != null) {
-        data.append("vendor_note", processForm.vendor_note);
-      }
-      if (wasAmountAdjust && processForm.amount_inr !== "") {
-        data.append("amount", String(processForm.amount_inr));
-      }
-      data.append("proof", processForm.proof);
-    } else {
-      data = {};
-      if (processForm.proof_url?.trim()) {
-        data.proof_url = processForm.proof_url.trim();
-      }
-      if (processForm.vendor_note != null) {
-        data.vendor_note = processForm.vendor_note;
-      }
-      if (wasAmountAdjust && processForm.amount_inr !== "") {
-        data.amount = Number(processForm.amount_inr);
-      }
-      headers = { "Content-Type": "application/json" };
+  if (processForm.proof) {
+    data = new FormData();
+    if (processForm.proof_url?.trim()) {
+      data.append("proof_url", processForm.proof_url.trim());
     }
+    if (processForm.vendor_note != null) {
+      data.append("vendor_note", processForm.vendor_note);
+    }
+    if (wasAmountAdjust && processForm.amount_inr !== "") {
+      data.append("amount", String(processForm.amount_inr));
+    }
+    data.append("proof", processForm.proof);
+  } else {
+    data = {};
+    if (processForm.proof_url?.trim()) {
+      data.proof_url = processForm.proof_url.trim();
+    }
+    if (processForm.vendor_note != null) {
+      data.vendor_note = processForm.vendor_note;
+    }
+    if (wasAmountAdjust && processForm.amount_inr !== "") {
+      data.amount = Number(processForm.amount_inr);
+    }
+    headers = { "Content-Type": "application/json" };
+  }
 
-    const res = await apiRequest("patch", urls.vendorTransfers.update, {
+  return new Promise((resolve, reject) => {
+    const successHandler = (res) => {
+      if (res?.status === "success") {
+        snackbar.show(
+          wasAmountAdjust
+            ? res.message || "Sent to admin for approval"
+            : res.message || "Draft saved",
+          "success"
+        );
+        emit("success");
+        closeModal();
+      }
+      resolve(res);
+    };
+
+    const failureHandler = (err) => {
+      console.error("Draft save failed", err);
+      snackbar.show(apiErrorMessage(err, "Draft save failed"), "error");
+      reject(err);
+    };
+
+    const finallyHandler = () => {
+      isSubmitting.value = false;
+    };
+
+    apiRequest("patch", urls.vendorTransfers.update, {
       look_up_key: activeTransfer.value.id,
       data,
       headers,
-      onFailure: (err) => {
-        snackbar.show(apiErrorMessage(err, "Draft save failed"), "error");
-      },
+      isTokenRequired: true,
+      onSuccess: successHandler,
+      onFailure: failureHandler,
+      onFinally: finallyHandler,
     });
-
-    if (res?.status === "success") {
-      snackbar.show(
-        wasAmountAdjust
-          ? res.message || "Sent to admin for approval"
-          : res.message || "Draft saved",
-        "success"
-      );
-      emit("success");
-      closeModal();
-    }
-  } catch (error) {
-    console.error("Draft save failed", error);
-    snackbar.show(apiErrorMessage(error, "Draft save failed"), "error");
-  } finally {
-    isSubmitting.value = false;
-  }
+  });
 };
 
-const submitTransfer = async () => {
-  if (!activeTransfer.value || !isFormValid.value || depositAmountChanged.value) return;
+const submitTransfer = () => {
+  if (!activeTransfer.value || !isFormValid.value || depositAmountChanged.value) return Promise.resolve();
+  
   isSubmitting.value = true;
+  const formData = new FormData();
+  
+  if (processForm.proof_url?.trim()) {
+    formData.append("proof_url", processForm.proof_url.trim());
+  }
+  if (processForm.vendor_note) {
+    formData.append("vendor_note", processForm.vendor_note);
+  }
+  if (processForm.proof) {
+    formData.append("proof", processForm.proof);
+  }
 
-  try {
-    const formData = new FormData();
-    if (processForm.proof_url?.trim()) {
-      formData.append("proof_url", processForm.proof_url.trim());
-    }
-    if (processForm.vendor_note) {
-      formData.append("vendor_note", processForm.vendor_note);
-    }
-    if (processForm.proof) {
-      formData.append("proof", processForm.proof);
-    }
+  return new Promise((resolve, reject) => {
+    const successHandler = (res) => {
+      if (res?.status === "success") {
+        snackbar.show(
+          res.message ||
+            (isDeposit(activeTransfer.value)
+              ? "Deposit confirmed"
+              : "Transfer submitted and withdrawal completed"),
+          "success"
+        );
+        emit("success");
+        closeModal();
+      }
+      resolve(res);
+    };
 
-    const res = await apiRequest("post", urls.vendorTransfers.submit, {
+    const failureHandler = (err) => {
+      console.error("Submit failed", err);
+      snackbar.show(apiErrorMessage(err, "Submit failed"), "error");
+      reject(err);
+    };
+
+    const finallyHandler = () => {
+      isSubmitting.value = false;
+    };
+
+    apiRequest("post", urls.vendorTransfers.submit, {
       look_up_key: `${activeTransfer.value.id}/submit`,
       data: formData,
-      onFailure: (err) => {
-        snackbar.show(apiErrorMessage(err, "Submit failed"), "error");
-      },
+      isTokenRequired: true,
+      onSuccess: successHandler,
+      onFailure: failureHandler,
+      onFinally: finallyHandler,
     });
-
-    if (res?.status === "success") {
-      snackbar.show(
-        res.message ||
-          (isDeposit(activeTransfer.value)
-            ? "Deposit confirmed"
-            : "Transfer submitted and withdrawal completed"),
-        "success"
-      );
-      emit("success");
-      closeModal();
-    }
-  } catch (error) {
-    console.error("Submit failed", error);
-    snackbar.show(apiErrorMessage(error, "Submit failed"), "error");
-  } finally {
-    isSubmitting.value = false;
-  }
+  });
 };
 
-const rejectTransfer = async () => {
+const rejectTransfer = () => {
   const reason = rejectForm.rejection_reason?.trim();
-  if (!activeTransfer.value || !reason) return;
+  if (!activeTransfer.value || !reason) return Promise.resolve();
   isSubmitting.value = true;
 
-  try {
-    const res = await apiRequest("post", urls.vendorTransfers.reject, {
+  return new Promise((resolve, reject) => {
+    const successHandler = (res) => {
+      if (res?.status === "success") {
+        snackbar.show(res.message || "Transfer rejected", "success");
+        emit("success");
+        closeModal();
+      }
+      resolve(res);
+    };
+
+    const failureHandler = (err) => {
+      console.error("Reject failed", err);
+      snackbar.show(apiErrorMessage(err, "Reject failed"), "error");
+      reject(err);
+    };
+
+    const finallyHandler = () => {
+      isSubmitting.value = false;
+    };
+
+    apiRequest("post", urls.vendorTransfers.reject, {
       look_up_key: `${activeTransfer.value.id}/reject`,
       data: {
         rejection_reason: reason,
       },
-      onFailure: (err) => {
-        snackbar.show(apiErrorMessage(err, "Reject failed"), "error");
-      },
+      isTokenRequired: true,
+      onSuccess: successHandler,
+      onFailure: failureHandler,
+      onFinally: finallyHandler,
     });
-
-    if (res?.status === "success") {
-      snackbar.show(res.message || "Transfer rejected", "success");
-      emit("success");
-      closeModal();
-    }
-  } catch (error) {
-    console.error("Reject failed", error);
-    snackbar.show(apiErrorMessage(error, "Reject failed"), "error");
-  } finally {
-    isSubmitting.value = false;
-  }
+  });
 };
 </script>

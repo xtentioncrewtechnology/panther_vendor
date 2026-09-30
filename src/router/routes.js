@@ -7,20 +7,16 @@ const routes = [
     component: DefaultLayout,
     meta: { requiresAuth: true },
     children: [
-      {
-        path: "dashboard",
-        name: "Dashboard",
-        component: () => import("@/pages/dashboard/Dashboard.vue"),
-      },
+
       {
         path: "profile",
         name: "Profile",
-        component: () => import("@/pages/dashboard/Profile.vue"),
+        component: () => import("@/pages/profile/index.vue"),
       },
       {
         path: "vendor/transfers",
         name: "VendorTransfers",
-        component: () => import("@/pages/dashboard/VendorTransfers.vue"),
+        component: () => import("@/pages/vendor-transfers/index.vue"),
       },
       {
         path: "",

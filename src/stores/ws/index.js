@@ -2,7 +2,7 @@ import { ref, provide, computed } from 'vue';
 import authToken from '@/common/authToken';
 import { defineStore } from 'pinia';
 import { usePositionsStore } from '@/stores/positions/positions';
-import { useProfileStore } from '@/stores/profile/profile';
+import { useProfileStore } from '@/stores/profile';
 // import { ManageWebsocketResponse } from '@/requests/manageResponse';
 
 export const useTickerStore = defineStore('tickers', () => {

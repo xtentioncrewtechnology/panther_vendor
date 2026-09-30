@@ -4,7 +4,7 @@ import App from './App.vue'
 import router from './router'
 import './style.css'
 import { initTheme } from '@/utils/theme'
-import { useThemeStore } from '@/stores/theme/theme'
+import { useThemeStore } from '@/stores/theme'
 
 // Apply theme before mount to avoid flash of wrong theme
 initTheme()

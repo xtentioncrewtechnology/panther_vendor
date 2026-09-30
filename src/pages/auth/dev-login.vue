@@ -1,11 +1,11 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
-import { useSnackbarStore } from "@/stores/snackbar/snackbar";
+import { useSnackbarStore } from "@/stores/snackbar";
 import apiRequest from "@/api/request";
 import authToken from "@/common/authToken";
 import urls from "@/api/urls";
 import { useRouter } from "vue-router";
-import { useMyPermissionsStore } from "@/stores/rbac/myPermissions";
+import { useMyPermissionsStore } from "@/stores/rbac";
 import BaseSelect from "@/components/common/BaseSelect.vue";
 
 const router = useRouter();

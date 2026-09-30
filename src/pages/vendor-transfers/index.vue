@@ -183,7 +183,7 @@
       </template>
 
       <template #cell-reference="{ row }">
-        <div class="text-xs font-mono text-primary-text break-all max-w-[180px]">
+        <div class="text-xs font-mono text-primary-text break-all max-w-45">
           {{ row.payment_request?.reference_id || "—" }}
         </div>
         <div class="text-[11px] text-secondary-text mt-0.5">
@@ -466,7 +466,7 @@
     <!-- Proof preview modal -->
     <div
       v-if="showProofPreview"
-      class="fixed inset-0 z-[60] flex items-center justify-center backdrop-blur-[2px] p-4"
+      class="fixed inset-0 z-60 flex items-center justify-center backdrop-blur-[2px] p-4"
       style="background-color: var(--app-overlay)"
       @click.self="closeProofPreview"
     >
@@ -490,7 +490,7 @@
           </button>
         </div>
 
-        <div class="p-4 sm:p-6 flex-1 overflow-auto bg-background/50 min-h-[280px] flex items-center justify-center">
+        <div class="p-4 sm:p-6 flex-1 overflow-auto bg-background/50 min-h-70 flex items-center justify-center">
           <div
             v-if="previewLoading"
             class="flex flex-col items-center gap-3 text-secondary-text"
@@ -545,36 +545,25 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from "vue";
-import apiRequest from "@/api/request";
-import urls from "@/api/urls";
+import { ref, computed, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import DataTable from "@/components/common/DataTable/DataTable.vue";
 import BaseSelect from "@/components/common/BaseSelect.vue";
 import BaseDatePicker from "@/components/common/BaseDatePicker copy.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
-import VendorTransferModals from "@/components/dashboard/VendorTransferModals.vue";
-import { useSnackbarStore } from "@/stores/snackbar/snackbar";
+import VendorTransferModals from "@/components/vendor-transfers/VendorTransferModals.vue";
+import { useVendorTransfersStore } from "@/stores/vendor-transfers";
+import { useSnackbarStore } from "@/stores/snackbar";
 
+const store = useVendorTransfersStore();
 const snackbar = useSnackbarStore();
+const { transfers, loading, fetchError, filters, pagination } = storeToRefs(store);
 
-const PROOF_ALLOWED_EXTENSIONS = new Set([
-  "png",
-  "jpg",
-  "jpeg",
-  "gif",
-  "webp",
-  "pdf",
-]);
-const PROOF_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-const PROOF_ACCEPT = ".png,.jpg,.jpeg,.gif,.webp,.pdf";
+// --- Modals State ---
+const modalType = ref("");
+const activeTransfer = ref(null);
 
-const transfers = ref([]);
-const loading = ref(false);
-const fetchError = ref(false);
-const isSubmitting = ref(false);
-const isDragging = ref(false);
-const fileInputRef = ref(null);
-
+// --- Proof Preview State ---
 const showProofPreview = ref(false);
 const previewUrl = ref("");
 const previewDisplayUrl = ref("");
@@ -583,25 +572,7 @@ const previewLoadError = ref(false);
 const previewLoading = ref(false);
 let previewObjectUrl = null;
 
-const getUrlExtension = (value) => {
-  if (!value) return "";
-  try {
-    const path = String(value).split("?")[0].split("#")[0];
-    const base = path.split("/").pop() || path;
-    const parts = base.toLowerCase().split(".");
-    return parts.length > 1 ? parts.pop() : "";
-  } catch {
-    return "";
-  }
-};
-
-const previewKind = computed(() => {
-  const ext = getUrlExtension(previewName.value || previewUrl.value);
-  if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "image";
-  if (ext === "pdf") return "pdf";
-  return "other";
-});
-
+// --- Options & Columns ---
 const statusOptions = [
   { label: "Assigned", value: "assigned" },
   { label: "Completed", value: "completed" },
@@ -613,71 +584,6 @@ const typeOptions = [
   { label: "Deposit", value: "deposit" },
   { label: "Withdrawal", value: "withdrawal" },
 ];
-
-const filters = reactive({
-  status: "assigned",
-  type: "",
-  dateRange: [],
-});
-
-const isDeposit = (row) =>
-  String(row?.payment_request?.type || "").toLowerCase() === "deposit";
-
-const isAwaitingAdmin = (row) =>
-  isDeposit(row) &&
-  !!row?.payment_request?.vendor_amount_adjusted &&
-  String(row?.payment_request?.approval_status || "").toLowerCase() === "pending";
-
-const processModalSubtitle = computed(() => {
-  if (!isDeposit(activeTransfer.value)) {
-    return "Add UTR and proof attachment to finish this payout";
-  }
-  if (depositAmountChanged.value) {
-    return "Amount changed — save to send this deposit to admin for approval before credit";
-  }
-  return "Confirm amount to credit (vendor UTR/proof optional if user already sent UTR/proof)";
-});
-
-const amountBaseline = ref(null);
-const isEditingAmount = ref(false);
-const amountInputRef = ref(null);
-
-const startEditAmount = async () => {
-  isEditingAmount.value = true;
-  await nextTick();
-  amountInputRef.value?.focus?.();
-  amountInputRef.value?.select?.();
-};
-
-const cancelEditAmount = () => {
-  const original = originalDepositAmount.value;
-  processForm.amount_inr =
-    original != null && !Number.isNaN(Number(original))
-      ? String(original)
-      : "";
-  isEditingAmount.value = false;
-};
-
-const originalDepositAmount = computed(() => {
-  if (amountBaseline.value !== null && amountBaseline.value !== undefined) {
-    return Number(amountBaseline.value);
-  }
-  const pr = activeTransfer.value?.payment_request;
-  return pr?.paid_amount != null ? Number(pr.paid_amount) : null;
-});
-
-const depositAmountChanged = computed(() => {
-  if (!isDeposit(activeTransfer.value)) return false;
-  const current = Number(processForm.amount_inr);
-  const original = Number(originalDepositAmount.value);
-  if (Number.isNaN(current) || Number.isNaN(original)) return false;
-  return Math.abs(current - original) > 0.0001;
-});
-const pagination = reactive({
-  page: 1,
-  per_page: 20,
-  total: 0,
-});
 
 const columns = [
   { key: "id", label: "ID", width: 70 },
@@ -692,36 +598,98 @@ const columns = [
   { key: "actions", label: "Actions", width: 160, sticky: "right" },
 ];
 
+// --- Computed & Helpers ---
+const hasActiveFilters = computed(() => !!filters.value.type || (filters.value.status && filters.value.status !== "assigned") || (filters.value.dateRange && filters.value.dateRange.length > 0));
+
+const emptyStateTitle = computed(() => {
+  if (fetchError.value) return "Couldn’t load transfers";
+  if (hasActiveFilters.value) return "No matching transfers";
+  return "No transfers yet";
+});
+
+const emptyStateDescription = computed(() => {
+  if (fetchError.value) return "Something went wrong while loading the queue. Try refreshing.";
+  if (hasActiveFilters.value) return "No transfers match the current filters. Clear filters or try another status.";
+  return "Assigned bank transfers will appear here when they need your review.";
+});
+
+const isDeposit = (row) => String(row?.payment_request?.type || "").toLowerCase() === "deposit";
+const isAwaitingAdmin = (row) => isDeposit(row) && !!row?.payment_request?.vendor_amount_adjusted && String(row?.payment_request?.approval_status || "").toLowerCase() === "pending";
+
 const formatDate = (value) => {
   if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString();
-  } catch {
-    return String(value);
-  }
+  try { return new Date(value).toLocaleString(); } catch { return String(value); }
 };
 
 const formatMoney = (value) => {
   if (value === null || value === undefined || value === "") return "—";
   const num = Number(value);
   if (Number.isNaN(num)) return String(value);
-  return num.toLocaleString("en-IN", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+  return num.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
-const formatFileSize = (bytes) => {
-  if (!bytes && bytes !== 0) return "";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+const truncateText = (text, max = 28) => text && text.length > max ? `${text.slice(0, max)}…` : text;
+
+const statusBadgeClass = (status) => {
+  if (status === "assigned") return "bg-primary-yellow/10 text-primary-yellow border-primary-yellow/25";
+  if (status === "completed") return "bg-primary-green/10 text-primary-green border-primary-green/25";
+  if (status === "cancelled") return "bg-primary-red/10 text-primary-red border-primary-red/25";
+  return "bg-background text-secondary-text border-primary-border";
 };
 
-const truncateText = (text, max = 28) => {
-  if (!text) return "";
-  return text.length > max ? `${text.slice(0, max)}…` : text;
+const paymentStatusClass = (status) => {
+  if (status === "paid") return "bg-primary-green/10 text-primary-green border-primary-green/25";
+  if (status === "pending") return "bg-primary-yellow/10 text-primary-yellow border-primary-yellow/25";
+  if (status === "failed" || status === "cancelled") return "bg-primary-red/10 text-primary-red border-primary-red/25";
+  return "bg-background text-secondary-text border-primary-border";
 };
+
+// --- Actions & Handlers ---
+const fetchTransfers = () => store.fetchTransfers();
+const clearFilters = () => store.clearFilters();
+const onFilterChange = () => {
+  pagination.value.page = 1;
+  store.fetchTransfers();
+};
+const changePage = (page) => store.setPage(page);
+const changePerPage = ({ page, per_page }) => store.setPerPage(per_page);
+
+const openProcessModal = (item) => {
+  if (isAwaitingAdmin(item)) {
+    snackbar.show("Amount was adjusted; waiting for admin approval before credit", "info");
+    return;
+  }
+  activeTransfer.value = item;
+  modalType.value = 'process';
+};
+
+const openRejectModal = (item) => {
+  activeTransfer.value = item;
+  modalType.value = 'reject';
+};
+
+const onModalSuccess = () => {
+  modalType.value = "";
+  store.fetchTransfers();
+};
+
+// --- Preview Logic ---
+const getUrlExtension = (value) => {
+  if (!value) return "";
+  try {
+    const path = String(value).split("?")[0].split("#")[0];
+    const base = path.split("/").pop() || path;
+    const parts = base.toLowerCase().split(".");
+    return parts.length > 1 ? parts.pop() : "";
+  } catch { return ""; }
+};
+
+const previewKind = computed(() => {
+  const ext = getUrlExtension(previewName.value || previewUrl.value);
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "image";
+  if (ext === "pdf") return "pdf";
+  return "other";
+});
 
 const fileNameFromUrl = (url, fallback = "") => {
   if (fallback) {
@@ -729,41 +697,25 @@ const fileNameFromUrl = (url, fallback = "") => {
     if (base) return base;
   }
   if (!url) return "attachment";
-  try {
-    const path = String(url).split("?")[0];
-    return path.split("/").pop() || "attachment";
-  } catch {
-    return "attachment";
-  }
+  try { return String(url).split("?")[0].split("/").pop() || "attachment"; } catch { return "attachment"; }
 };
 
 const getApiOrigin = () => {
   const customUrl = localStorage.getItem("custom_base_url");
-  if (customUrl) {
-    return customUrl.endsWith("/") ? customUrl.slice(0, -1) : customUrl;
-  }
+  if (customUrl) return customUrl.endsWith("/") ? customUrl.slice(0, -1) : customUrl;
   const fromEnv = import.meta.env.VITE_API_HOST;
   if (fromEnv) return String(fromEnv).replace(/\/$/, "");
-  if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin;
-  }
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
   return "";
 };
 
-/** Resolve relative proof paths to a fetchable absolute URL. */
 const resolveProofUrl = (url) => {
   if (!url) return "";
   const raw = String(url).trim();
-  if (/^https?:\/\//i.test(raw) || raw.startsWith("blob:") || raw.startsWith("data:")) {
-    return raw;
-  }
+  if (/^https?:\/\//i.test(raw) || raw.startsWith("blob:") || raw.startsWith("data:")) return raw;
   const origin = getApiOrigin();
   const path = raw.replace(/^\/+/, "");
-  // Backend serves uploads at /uploads/<path> and may also embed full PUBLIC_BASE_URL
-  if (path.startsWith("uploads/")) {
-    return `${origin}/${path}`;
-  }
-  return `${origin}/uploads/${path}`;
+  return path.startsWith("uploads/") ? `${origin}/${path}` : `${origin}/uploads/${path}`;
 };
 
 const revokePreviewObjectUrl = () => {
@@ -783,20 +735,15 @@ const loadPreviewContent = async (resolvedUrl) => {
   previewLoadError.value = false;
   revokePreviewObjectUrl();
   previewDisplayUrl.value = "";
-
   try {
-    const res = await fetch(resolvedUrl, {
-      mode: "cors",
-      credentials: "omit",
-    });
+    const res = await fetch(resolvedUrl, { mode: "cors", credentials: "omit" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const blob = await res.blob();
     previewObjectUrl = URL.createObjectURL(blob);
     previewDisplayUrl.value = previewObjectUrl;
-    previewLoading.value = false;
   } catch {
-    // Fall back to direct URL (works when CDN allows img src but blocks fetch CORS)
     previewDisplayUrl.value = resolvedUrl;
+  } finally {
     previewLoading.value = false;
   }
 };
@@ -825,7 +772,6 @@ const downloadProofFile = async () => {
   const source = previewDisplayUrl.value || previewUrl.value;
   if (!source) return;
   const filename = previewName.value || "proof-attachment";
-
   try {
     let blob;
     if (source.startsWith("blob:")) {
@@ -856,445 +802,7 @@ const downloadProofFile = async () => {
   }
 };
 
-const statusBadgeClass = (status) => {
-  if (status === "assigned") {
-    return "bg-primary-yellow/10 text-primary-yellow border-primary-yellow/25";
-  }
-  if (status === "completed") {
-    return "bg-primary-green/10 text-primary-green border-primary-green/25";
-  }
-  if (status === "cancelled") {
-    return "bg-primary-red/10 text-primary-red border-primary-red/25";
-  }
-  return "bg-background text-secondary-text border-primary-border";
-};
-
-const paymentStatusClass = (status) => {
-  if (status === "paid") {
-    return "bg-primary-green/10 text-primary-green border-primary-green/25";
-  }
-  if (status === "pending") {
-    return "bg-primary-yellow/10 text-primary-yellow border-primary-yellow/25";
-  }
-  if (status === "failed" || status === "cancelled") {
-    return "bg-primary-red/10 text-primary-red border-primary-red/25";
-  }
-  return "bg-background text-secondary-text border-primary-border";
-};
-
-const apiErrorMessage = (err, fallback) => {
-  return (
-    err?.message ||
-    err?.error ||
-    err?.response?.data?.message ||
-    fallback
-  );
-};
-
-const fetchTransfers = async () => {
-  loading.value = true;
-  fetchError.value = false;
-  try {
-    const params = {
-      status: filters.status,
-      page: pagination.page,
-      per_page: pagination.per_page,
-    };
-    if (filters.type) {
-      params.type = filters.type;
-    }
-    if (filters.dateRange) {
-      if (Array.isArray(filters.dateRange) && filters.dateRange.length === 2) {
-        params.from_date = filters.dateRange[0];
-        params.to_date = filters.dateRange[1];
-      } else if (filters.dateRange.start && filters.dateRange.end) {
-        params.from_date = filters.dateRange.start;
-        params.to_date = filters.dateRange.end;
-      }
-    }
-    const res = await apiRequest("get", urls.vendorTransfers.list, {
-      params,
-    });
-    if (res.status === "success") {
-      transfers.value = res.data || [];
-      if (res.pagination) {
-        pagination.page = res.pagination.page;
-        pagination.per_page = res.pagination.per_page;
-        pagination.total = res.pagination.total;
-      }
-    }
-  } catch (error) {
-    console.error("Failed to fetch transfers", error);
-    transfers.value = [];
-    fetchError.value = true;
-    snackbar.show("Failed to load transfers", "error");
-  } finally {
-    loading.value = false;
-  }
-};
-
-const hasActiveFilters = computed(
-  () => !!filters.type || (filters.status && filters.status !== "assigned") || (filters.dateRange && filters.dateRange.length > 0),
-);
-
-const emptyStateTitle = computed(() => {
-  if (fetchError.value) return "Couldn’t load transfers";
-  if (hasActiveFilters.value) return "No matching transfers";
-  return "No transfers yet";
-});
-
-const emptyStateDescription = computed(() => {
-  if (fetchError.value) {
-    return "Something went wrong while loading the queue. Try refreshing.";
-  }
-  if (hasActiveFilters.value) {
-    return "No transfers match the current filters. Clear filters or try another status.";
-  }
-  return "Assigned bank transfers will appear here when they need your review.";
-});
-
-const clearFilters = () => {
-  filters.type = "";
-  filters.status = "assigned";
-  filters.dateRange = [];
-  pagination.page = 1;
-  fetchTransfers();
-};
-
-const onFilterChange = () => {
-  pagination.page = 1;
-  fetchTransfers();
-};
-const changePage = (page) => {
-  pagination.page = page;
-  fetchTransfers();
-};
-
-const changePerPage = ({ page, per_page }) => {
-  pagination.page = page;
-  pagination.per_page = per_page;
-  fetchTransfers();
-};
-
-const showProcessModal = ref(false);
-const showRejectModal = ref(false);
-const modalType = ref("");
-
-const onModalSuccess = () => {
-  modalType.value = "";
-  fetchTransfers();
-};
-const activeTransfer = ref(null);
-
-const processForm = reactive({
-  proof_url: "",
-  vendor_note: "",
-  proof: null,
-  amount_inr: "",
-});
-
-const rejectForm = reactive({
-  rejection_reason: "",
-});
-
-const userDepositHasProof = (transfer) => {
-  const bank = transfer?.payment_request?.bank;
-  const pr = transfer?.payment_request;
-  if ((bank?.utr || pr?.txid || "").toString().trim()) return true;
-  if ((bank?.deposit_proof_url || "").toString().trim()) return true;
-  return false;
-};
-
-const depositHasAnyProof = (transfer) => {
-  if (userDepositHasProof(transfer)) return true;
-  if (processForm.proof_url?.trim() || transfer?.proof_url) return true;
-  if (processForm.proof || transfer?.proof_attachment_url) return true;
-  return false;
-};
-
-const isFormValid = computed(() => {
-  if (depositAmountChanged.value) return false;
-
-  if (isDeposit(activeTransfer.value)) {
-    const amount = Number(processForm.amount_inr);
-    const hasAmount = Number.isFinite(amount) && amount > 0;
-    // Amount required; vendor UTR optional when user UTR/proof (or vendor proof) exists
-    return hasAmount && depositHasAnyProof(activeTransfer.value);
-  }
-
-  const hasUtr = !!processForm.proof_url?.trim();
-  const hasFile =
-    !!processForm.proof || !!activeTransfer.value?.proof_attachment_url;
-  return hasUtr && hasFile;
-});
-
-const submitDisabledReason = computed(() => {
-  if (isSubmitting.value) return "";
-  if (depositAmountChanged.value) {
-    return "Amount changed — save draft for admin approval first";
-  }
-  if (isFormValid.value) return "";
-
-  if (isDeposit(activeTransfer.value)) {
-    const amount = Number(processForm.amount_inr);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return "Enter a valid amount greater than 0";
-    }
-    return "Add UTR or proof (user has none on this request)";
-  }
-
-  const hasUtr = !!processForm.proof_url?.trim();
-  const hasFile =
-    !!processForm.proof || !!activeTransfer.value?.proof_attachment_url;
-  if (!hasUtr && !hasFile) return "Enter UTR and attach proof";
-  if (!hasUtr) return "Enter UTR / remittance";
-  if (!hasFile) return "Attach a proof file";
-  return "";
-});
-
-const canSaveDraft = computed(() => {
-  return (
-    !!processForm.proof_url?.trim() ||
-    !!processForm.vendor_note?.trim() ||
-    !!processForm.proof ||
-    depositAmountChanged.value
-  );
-});
-
-const getFileExtension = (filename) => {
-  const parts = String(filename || "").toLowerCase().split(".");
-  return parts.length > 1 ? parts.pop() : "";
-};
-
-const validateProofFile = (file) => {
-  if (!file) return false;
-  const ext = getFileExtension(file.name);
-  if (!PROOF_ALLOWED_EXTENSIONS.has(ext)) {
-    snackbar.show(
-      "Invalid file type. Use PNG, JPG, GIF, WEBP, or PDF.",
-      "error",
-    );
-    return false;
-  }
-  if (file.size > PROOF_MAX_SIZE) {
-    snackbar.show("File too large. Maximum size is 10 MB.", "error");
-    return false;
-  }
-  return true;
-};
-
-let localProofObjectUrl = null;
-
-const revokeLocalProofObjectUrl = () => {
-  if (localProofObjectUrl) {
-    URL.revokeObjectURL(localProofObjectUrl);
-    localProofObjectUrl = null;
-  }
-};
-
-const setProofFile = (file) => {
-  if (!validateProofFile(file)) return;
-  revokeLocalProofObjectUrl();
-  processForm.proof = file;
-};
-
-const clearProofFile = () => {
-  processForm.proof = null;
-  revokeLocalProofObjectUrl();
-  if (fileInputRef.value) {
-    fileInputRef.value.value = "";
-  }
-};
-
-const viewLocalProofFile = () => {
-  if (!processForm.proof) return;
-  revokeLocalProofObjectUrl();
-  localProofObjectUrl = URL.createObjectURL(processForm.proof);
-  openProofPreview(localProofObjectUrl, processForm.proof.name);
-};
-
-const openFilePicker = () => {
-  fileInputRef.value?.click();
-};
-
-const handleFileChange = (e) => {
-  const file = e.target.files?.[0];
-  if (file) setProofFile(file);
-  else clearProofFile();
-};
-
-const onDragLeave = (e) => {
-  if (e.currentTarget.contains(e.relatedTarget)) return;
-  isDragging.value = false;
-};
-
-const onDrop = (e) => {
-  isDragging.value = false;
-  const file = e.dataTransfer?.files?.[0];
-  if (file) setProofFile(file);
-};
-
-const openProcessModal = (item) => {
-  if (isAwaitingAdmin(item)) {
-    snackbar.show(
-      "Amount was adjusted; waiting for admin approval before credit",
-      "info",
-    );
-    return;
-  }
-  activeTransfer.value = item;
-  modalType.value = 'process';
-};
-
-const closeProcessModal = () => {
-  showProcessModal.value = false;
-  isDragging.value = false;
-  isEditingAmount.value = false;
-  revokeLocalProofObjectUrl();
-};
-
-const openRejectModal = (item) => {
-  activeTransfer.value = item;
-  modalType.value = 'reject';
-};
-
-const saveDraft = async () => {
-  if (!activeTransfer.value || !canSaveDraft.value) return;
-  isSubmitting.value = true;
-  const wasAmountAdjust = depositAmountChanged.value;
-
-  try {
-    let data;
-    let headers = {};
-
-    if (processForm.proof) {
-      // Let the browser set multipart boundary — do not set Content-Type
-      data = new FormData();
-      if (processForm.proof_url?.trim()) {
-        data.append("proof_url", processForm.proof_url.trim());
-      }
-      if (processForm.vendor_note != null) {
-        data.append("vendor_note", processForm.vendor_note);
-      }
-      if (wasAmountAdjust && processForm.amount_inr !== "") {
-        data.append("amount", String(processForm.amount_inr));
-      }
-      data.append("proof", processForm.proof);
-    } else {
-      data = {};
-      if (processForm.proof_url?.trim()) {
-        data.proof_url = processForm.proof_url.trim();
-      }
-      if (processForm.vendor_note != null) {
-        data.vendor_note = processForm.vendor_note;
-      }
-      if (wasAmountAdjust && processForm.amount_inr !== "") {
-        data.amount = Number(processForm.amount_inr);
-      }
-      headers = { "Content-Type": "application/json" };
-    }
-
-    const res = await apiRequest("patch", urls.vendorTransfers.update, {
-      look_up_key: activeTransfer.value.id,
-      data,
-      headers,
-      onFailure: (err) => {
-        snackbar.show(apiErrorMessage(err, "Draft save failed"), "error");
-      },
-    });
-
-    if (res?.status === "success") {
-      snackbar.show(
-        wasAmountAdjust
-          ? res.message || "Sent to admin for approval"
-          : res.message || "Draft saved",
-        "success",
-      );
-      closeProcessModal();
-      fetchTransfers();
-    }
-  } catch (error) {
-    console.error("Draft save failed", error);
-    snackbar.show(apiErrorMessage(error, "Draft save failed"), "error");
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const submitTransfer = async () => {
-  if (!activeTransfer.value || !isFormValid.value || depositAmountChanged.value) return;
-  isSubmitting.value = true;
-
-  try {
-    const formData = new FormData();
-    if (processForm.proof_url?.trim()) {
-      formData.append("proof_url", processForm.proof_url.trim());
-    }
-    if (processForm.vendor_note) {
-      formData.append("vendor_note", processForm.vendor_note);
-    }
-    if (processForm.proof) {
-      formData.append("proof", processForm.proof);
-    }
-
-    // Do not set Content-Type — axios sets multipart boundary
-    const res = await apiRequest("post", urls.vendorTransfers.submit, {
-      look_up_key: `${activeTransfer.value.id}/submit`,
-      data: formData,
-      onFailure: (err) => {
-        snackbar.show(apiErrorMessage(err, "Submit failed"), "error");
-      },
-    });
-
-    if (res?.status === "success") {
-      snackbar.show(
-        res.message ||
-          (isDeposit(activeTransfer.value)
-            ? "Deposit confirmed"
-            : "Transfer submitted and withdrawal completed"),
-        "success",
-      );
-      closeProcessModal();
-      fetchTransfers();
-    }
-  } catch (error) {
-    console.error("Submit failed", error);
-    snackbar.show(apiErrorMessage(error, "Submit failed"), "error");
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const rejectTransfer = async () => {
-  const reason = rejectForm.rejection_reason?.trim();
-  if (!activeTransfer.value || !reason) return;
-  isSubmitting.value = true;
-
-  try {
-    const res = await apiRequest("post", urls.vendorTransfers.reject, {
-      look_up_key: `${activeTransfer.value.id}/reject`,
-      data: {
-        rejection_reason: reason,
-      },
-      onFailure: (err) => {
-        snackbar.show(apiErrorMessage(err, "Reject failed"), "error");
-      },
-    });
-
-    if (res?.status === "success") {
-      snackbar.show(res.message || "Transfer rejected", "success");
-      showRejectModal.value = false;
-      fetchTransfers();
-    }
-  } catch (error) {
-    console.error("Reject failed", error);
-    snackbar.show(apiErrorMessage(error, "Reject failed"), "error");
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
 onMounted(() => {
-  fetchTransfers();
+  store.fetchTransfers();
 });
 </script>

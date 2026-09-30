@@ -57,7 +57,7 @@
           <slot name="empty">
             <div
               ref="emptyStateRef"
-              class="empty-state sticky left-0 relative flex flex-col items-center justify-center gap-3 py-20 px-6"
+              class="empty-state sticky left-0 flex flex-col items-center justify-center gap-3 py-20 px-6"
               :style="{ width: emptyViewportWidth }"
             >
               <div
@@ -123,7 +123,7 @@
             getColumnAlignClass(col),
             col.sticky === 'left' ? 'sticky left-0 bg-card-background group-hover:bg-background z-10 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
             col.sticky === 'right' ? 'sticky bg-card-background group-hover:bg-background z-10 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]' : '',
-            col.sticky && isRowSelected(row) ? '!bg-primary/10' : '',
+            col.sticky && isRowSelected(row) ? 'bg-primary/10!' : '',
             col.cellClass || '',
           ]"
         >

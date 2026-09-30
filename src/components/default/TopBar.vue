@@ -71,8 +71,8 @@
 <script setup>
 import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useThemeStore } from "@/stores/theme/theme";
-import { useProfileStore } from "@/stores/profile/profile";
+import { useThemeStore } from "@/stores/theme";
+import { useProfileStore } from "@/stores/profile";
 
 const router = useRouter();
 const route = useRoute();
@@ -82,7 +82,6 @@ const profile = useProfileStore();
 const pageTitle = computed(() => {
   if (route.meta?.title) return route.meta.title;
   if (route.name === "VendorTransfers") return "Vendor Queue";
-  if (route.name === "Dashboard") return "Dashboard";
   if (route.name === "Profile") return "Profile Settings";
   return route.name || "App";
 });

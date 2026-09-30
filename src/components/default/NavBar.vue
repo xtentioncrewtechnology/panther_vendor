@@ -99,7 +99,7 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useProfileStore } from "@/stores/profile/profile";
+import { useProfileStore } from "@/stores/profile";
 
 const props = defineProps({
   isOpen: Boolean,
