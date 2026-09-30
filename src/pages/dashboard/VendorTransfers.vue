@@ -1103,14 +1103,15 @@ const submitTransfer = async () => {
 };
 
 const rejectTransfer = async () => {
-  if (!activeTransfer.value || !rejectForm.rejection_reason) return;
+  const reason = rejectForm.rejection_reason?.trim();
+  if (!activeTransfer.value || !reason) return;
   isSubmitting.value = true;
 
   try {
     const res = await apiRequest("post", urls.vendorTransfers.reject, {
       look_up_key: `${activeTransfer.value.id}/reject`,
       data: {
-        rejection_reason: rejectForm.rejection_reason,
+        rejection_reason: reason,
       },
       onFailure: (err) => {
         snackbar.show(apiErrorMessage(err, "Reject failed"), "error");

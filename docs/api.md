@@ -267,28 +267,33 @@ Deposit confirm: vendor UTR is optional if the payment request already has user 
 
 ---
 
-### B5. Reject while processing
+### B5. Reject deposit or withdrawal
 
 `POST /admin/vendor/transfers/<transfer_id>/reject`  
-Permission: `payment_requests.reject` (not `vendor.submit`)  
+Permission: `payment_requests.reject` (seeded on Vendor role; not `vendor.submit`)  
 Used by: Reject action in Vendor Queue
 
-**Body** (JSON or form)
+**Body** (JSON or form) — **required**
 
 ```json
 { "rejection_reason": "Wrong bank details" }
 ```
 
-Aliases: `reason`. Default: `"Rejected by admin"`.
+Aliases: `reason`. Empty / missing → `400` `"rejection_reason is required"`.
 
-**Effects:** transfer `cancelled`; PR `rejected`; funds reversed to trading account / FM / IB wallet.
+**Effects**
+
+- `VendorTransfer.status` → `cancelled`
+- PR `approval_status` → `rejected`, `rejection_reason` set
+- Deposit: no fund reverse (nothing credited yet)
+- Withdrawal: funds reversed to trading account / FM / IB wallet
 
 **Success `200`**
 
 ```json
 {
   "status": "success",
-  "message": "Vendor transfer rejected and funds reversed",
+  "message": "Vendor transfer rejected",
   "data": { }
 }
 ```
@@ -299,15 +304,16 @@ Aliases: `reason`. Default: `"Rejected by admin"`.
 
 Not built into the vendor Vue app (main admin uses these). Required for the flow to start.
 
-### C1. First approve → creates vendor row
+### C1. First approve → creates vendor row (withdrawals)
 
 `POST /admin/payment-requests/approve/<req_id>`  
 Permission: `payment_requests.approve`  
 Optional multipart: `admin_document_proof`
 
-**Bank-transfer withdrawal only:**
+**Bank-transfer withdrawal only** (this is how withdrawals enter the vendor portal):
 
 - Creates `VendorTransfer` (`status=assigned`)
+- Sets `assigned_to` from `payment_method.vendor_user_id` when connected
 - Sets PR `approval_status=processing` (funds stay debited)
 - Message: `"Payment request sent to vendor for processing"`
 
@@ -327,6 +333,7 @@ Other gateways still go straight to `approved` (no vendor row).
 }
 ```
 
+**Note:** Bank-transfer deposits with `vendor_user_id` are already in the vendor queue on create; admin approve is for amount-adjusted deposits / admin-only deposits, not the normal vendor deposit path.
 ---
 
 ### C2. Reject payment request
@@ -393,6 +400,7 @@ Notes:
 - Client path usually needs `trading_account_id`.
 - FM / IB paths debit commission / IB wallet (no trading account required for IB wallet flow).
 - Amount is debited on create; PR starts `pending` / `paid`.
+- **No vendor row on create** — even when the method has `vendor_user_id`. Admin must first-approve (C1) before the job appears in the vendor portal.
 - Payout currency for bank transfer is **INR**.
 
 Also related:
@@ -400,7 +408,7 @@ Also related:
 | Method | Path | Purpose |
 |--------|------|---------|
 | `GET` | `…/payment-methods?type=withdrawal` | List methods (client / fm / ib) |
-| `GET` | `/client/payment-requests?type=withdrawal` | Client history — treat `processing` as in-flight |
+| `GET` | `/client/payment-requests?type=withdrawal` | Client history — `pending` = awaiting admin; `processing` = with vendor |
 
 ---
 
