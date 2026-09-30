@@ -740,9 +740,14 @@ const fetchTransfers = async () => {
     if (filters.type) {
       params.type = filters.type;
     }
-    if (filters.dateRange && filters.dateRange.length === 2) {
-      params.from_date = filters.dateRange[0];
-      params.to_date = filters.dateRange[1];
+    if (filters.dateRange) {
+      if (Array.isArray(filters.dateRange) && filters.dateRange.length === 2) {
+        params.from_date = filters.dateRange[0];
+        params.to_date = filters.dateRange[1];
+      } else if (filters.dateRange.start && filters.dateRange.end) {
+        params.from_date = filters.dateRange.start;
+        params.to_date = filters.dateRange.end;
+      }
     }
     const res = await apiRequest("get", urls.vendorTransfers.list, {
       params,

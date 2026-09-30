@@ -92,8 +92,7 @@
 
 <script setup>
 import { ref } from 'vue';
-
-
+import { SlidersHorizontal } from 'lucide-vue-next';
 const props = defineProps({
   columns: {
     type: Array,
