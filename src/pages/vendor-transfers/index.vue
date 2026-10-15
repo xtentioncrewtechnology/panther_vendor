@@ -1,5 +1,13 @@
 <template>
   <div class="flex flex-col h-full gap-3">
+    <!-- Vendor KPI Summary -->
+    <VendorKpiSummary
+      :summary="summary"
+      :loading="summaryLoading"
+      @filter-status="handleQuickFilterStatus"
+      @filter-type="handleQuickFilterType"
+    />
+
     <!-- Top Controls -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center">
@@ -59,12 +67,12 @@
           class="bg-card-background border border-primary-border rounded-xl p-1 text-secondary-text hover:bg-primary/5 transition-colors flex items-center justify-center"
           title="Refresh list"
           aria-label="Refresh list"
-          :disabled="loading"
-          @click="fetchTransfers"
+          :disabled="loading || summaryLoading"
+          @click="refreshAll"
         >
           <span
             class="material-symbols-outlined text-[18px]"
-            :class="loading ? 'animate-spin' : ''"
+            :class="loading || summaryLoading ? 'animate-spin' : ''"
           >
             refresh
           </span>
@@ -153,19 +161,56 @@
             View user proof
           </button>
         </div>
-        <div class="min-w-0" v-else>
-          <div class="font-medium text-primary-text truncate">
-            {{ row.payment_request?.bank?.bank || "—" }}
+        <div class="min-w-0 group/bank relative" v-else>
+          <div class="flex items-center justify-between gap-1">
+            <div class="font-medium text-primary-text truncate" :title="row.payment_request?.bank?.bank || ''">
+              {{ row.payment_request?.bank?.bank || "—" }}
+            </div>
+            <button
+              v-if="row.payment_request?.bank"
+              type="button"
+              class="w-5 h-5 flex items-center justify-center rounded text-secondary-text hover:text-primary hover:bg-primary/10 transition-all cursor-pointer shrink-0 opacity-0 group-hover/bank:opacity-100"
+              title="Copy all bank details"
+              @click.stop="copyAllBankDetails(row.payment_request.bank)"
+            >
+              <span class="material-symbols-outlined text-[13px]">content_copy</span>
+            </button>
           </div>
-          <div class="text-xs text-secondary-text mt-0.5 truncate">
-            {{ row.payment_request?.bank?.account_name || "—" }}
+          <div
+            v-if="row.payment_request?.bank?.account_name"
+            class="group/item flex items-center gap-1 text-xs text-secondary-text mt-0.5 truncate"
+          >
+            <span class="truncate" :title="row.payment_request.bank.account_name">
+              {{ row.payment_request.bank.account_name }}
+            </span>
+            <button
+              type="button"
+              class="opacity-0 group-hover/item:opacity-100 hover:text-primary transition-opacity p-0.5 cursor-pointer text-secondary-text shrink-0"
+              title="Copy account name"
+              @click.stop="copyToClipboard(row.payment_request.bank.account_name, 'Account name')"
+            >
+              <span class="material-symbols-outlined text-[12px] block">content_copy</span>
+            </button>
           </div>
-          <div class="text-xs text-secondary-text font-mono mt-0.5">
-            {{ row.payment_request?.bank?.account_number || "—" }}
+          <div
+            v-if="row.payment_request?.bank?.account_number"
+            class="group/item flex items-center gap-1 text-xs font-mono mt-0.5"
+          >
+            <span class="text-primary-text font-semibold select-all">
+              {{ row.payment_request.bank.account_number }}
+            </span>
+            <button
+              type="button"
+              class="opacity-0 group-hover/item:opacity-100 text-secondary-text hover:text-primary transition-opacity p-0.5 cursor-pointer shrink-0"
+              title="Copy account number"
+              @click.stop="copyToClipboard(row.payment_request.bank.account_number, 'Account number')"
+            >
+              <span class="material-symbols-outlined text-[12px] block">content_copy</span>
+            </button>
           </div>
           <div
             v-if="row.payment_request?.bank?.account_type || row.payment_request?.bank?.bank_branch_code"
-            class="text-[11px] text-secondary-text mt-0.5"
+            class="group/item flex items-center gap-1 text-[11px] text-secondary-text mt-0.5 flex-wrap"
           >
             <span v-if="row.payment_request?.bank?.account_type">
               {{ row.payment_request.bank.account_type }}
@@ -175,9 +220,21 @@
             >
               ·
             </span>
-            <span v-if="row.payment_request?.bank?.bank_branch_code">
-              IFSC/Branch: {{ row.payment_request.bank.bank_branch_code }}
+            <span
+              v-if="row.payment_request?.bank?.bank_branch_code"
+              class="font-mono text-primary-text font-medium select-all"
+            >
+              IFSC: {{ row.payment_request.bank.bank_branch_code }}
             </span>
+            <button
+              v-if="row.payment_request?.bank?.bank_branch_code"
+              type="button"
+              class="opacity-0 group-hover/item:opacity-100 text-secondary-text hover:text-primary transition-opacity p-0.5 cursor-pointer shrink-0"
+              title="Copy IFSC code"
+              @click.stop="copyToClipboard(row.payment_request.bank.bank_branch_code, 'IFSC code')"
+            >
+              <span class="material-symbols-outlined text-[12px] block">content_copy</span>
+            </button>
           </div>
         </div>
       </template>
@@ -377,15 +434,58 @@
             </div>
           </div>
           <div class="min-w-0" v-else>
-            <div class="text-[10px] text-secondary-text uppercase tracking-wide font-semibold mb-1">User Bank</div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <div class="text-[10px] text-secondary-text uppercase tracking-wide font-semibold">User Bank</div>
+              <button
+                v-if="row.payment_request?.bank"
+                type="button"
+                class="w-5 h-5 flex items-center justify-center rounded text-secondary-text hover:text-primary hover:bg-primary/10 transition cursor-pointer shrink-0"
+                title="Copy all bank details"
+                @click.stop="copyAllBankDetails(row.payment_request.bank)"
+              >
+                <span class="material-symbols-outlined text-[12px]">content_copy</span>
+              </button>
+            </div>
             <div class="font-medium text-primary-text text-xs truncate">
               {{ row.payment_request?.bank?.bank || "—" }}
             </div>
-            <div class="text-[11px] text-secondary-text mt-0.5 truncate">
-              {{ row.payment_request?.bank?.account_name || "—" }}
+            <div class="flex items-center gap-1 text-[11px] text-secondary-text mt-0.5 truncate">
+              <span class="truncate">{{ row.payment_request?.bank?.account_name || "—" }}</span>
+              <button
+                v-if="row.payment_request?.bank?.account_name"
+                type="button"
+                class="p-0.5 text-secondary-text hover:text-primary transition cursor-pointer"
+                title="Copy account name"
+                @click.stop="copyToClipboard(row.payment_request.bank.account_name, 'Account name')"
+              >
+                <span class="material-symbols-outlined text-[11px] block">content_copy</span>
+              </button>
             </div>
-            <div class="text-[11px] text-secondary-text font-mono mt-0.5">
-              {{ row.payment_request?.bank?.account_number || "—" }}
+            <div class="flex items-center gap-1 text-[11px] font-mono mt-0.5">
+              <span class="text-primary-text font-medium select-all">{{ row.payment_request?.bank?.account_number || "—" }}</span>
+              <button
+                v-if="row.payment_request?.bank?.account_number"
+                type="button"
+                class="p-0.5 text-secondary-text hover:text-primary transition cursor-pointer"
+                title="Copy account number"
+                @click.stop="copyToClipboard(row.payment_request.bank.account_number, 'Account number')"
+              >
+                <span class="material-symbols-outlined text-[12px] block">content_copy</span>
+              </button>
+            </div>
+            <div
+              v-if="row.payment_request?.bank?.bank_branch_code"
+              class="flex items-center gap-1 text-[10px] font-mono text-secondary-text mt-0.5"
+            >
+              <span>IFSC: {{ row.payment_request.bank.bank_branch_code }}</span>
+              <button
+                type="button"
+                class="p-0.5 text-secondary-text hover:text-primary transition cursor-pointer"
+                title="Copy IFSC"
+                @click.stop="copyToClipboard(row.payment_request.bank.bank_branch_code, 'IFSC')"
+              >
+                <span class="material-symbols-outlined text-[11px] block">content_copy</span>
+              </button>
             </div>
           </div>
 
@@ -466,7 +566,7 @@
     <!-- Proof preview modal -->
     <div
       v-if="showProofPreview"
-      class="fixed inset-0 z-60 flex items-center justify-center backdrop-blur-[2px] p-4"
+      class="fixed inset-0 z-[110] flex items-center justify-center backdrop-blur-[2px] p-4"
       style="background-color: var(--app-overlay)"
       @click.self="closeProofPreview"
     >
@@ -552,12 +652,13 @@ import BaseSelect from "@/components/common/BaseSelect.vue";
 import BaseDatePicker from "@/components/common/BaseDatePicker copy.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
 import VendorTransferModals from "@/components/vendor-transfers/VendorTransferModals.vue";
+import VendorKpiSummary from "@/components/vendor-transfers/VendorKpiSummary.vue";
 import { useVendorTransfersStore } from "@/stores/vendor-transfers";
 import { useSnackbarStore } from "@/stores/snackbar";
 
 const store = useVendorTransfersStore();
 const snackbar = useSnackbarStore();
-const { transfers, loading, fetchError, filters, pagination } = storeToRefs(store);
+const { transfers, loading, fetchError, filters, pagination, summary, summaryLoading } = storeToRefs(store);
 
 // --- Modals State ---
 const modalType = ref("");
@@ -630,6 +731,39 @@ const formatMoney = (value) => {
 
 const truncateText = (text, max = 28) => text && text.length > max ? `${text.slice(0, max)}…` : text;
 
+const copyToClipboard = async (text, label = "Text") => {
+  if (!text || text === "—") return;
+  try {
+    await navigator.clipboard.writeText(String(text).trim());
+    snackbar.show(`${label} copied`, "success");
+  } catch (err) {
+    console.error("Copy failed", err);
+    snackbar.show(`Failed to copy ${label.toLowerCase()}`, "error");
+  }
+};
+
+const copyAllBankDetails = async (bank) => {
+  if (!bank) return;
+  const lines = [];
+  const bankName = bank.bank || bank.bank_name;
+  if (bankName) lines.push(`Bank: ${bankName}`);
+  if (bank.account_name) lines.push(`A/C Name: ${bank.account_name}`);
+  if (bank.account_number) lines.push(`A/C No: ${bank.account_number}`);
+  const ifsc = bank.bank_branch_code || bank.ifsc_code || bank.ifsc;
+  if (ifsc) lines.push(`IFSC: ${ifsc}`);
+  if (bank.account_type) lines.push(`A/C Type: ${bank.account_type}`);
+
+  if (lines.length === 0) return;
+
+  try {
+    await navigator.clipboard.writeText(lines.join("\n"));
+    snackbar.show("All bank details copied with labels", "success");
+  } catch (err) {
+    console.error("Copy failed", err);
+    snackbar.show("Failed to copy bank details", "error");
+  }
+};
+
 const statusBadgeClass = (status) => {
   if (status === "assigned") return "bg-primary-yellow/10 text-primary-yellow border-primary-yellow/25";
   if (status === "completed") return "bg-primary-green/10 text-primary-green border-primary-green/25";
@@ -646,6 +780,10 @@ const paymentStatusClass = (status) => {
 
 // --- Actions & Handlers ---
 const fetchTransfers = () => store.fetchTransfers();
+const refreshAll = () => {
+  store.fetchTransfers();
+  store.fetchSummary(true);
+};
 const clearFilters = () => store.clearFilters();
 const onFilterChange = () => {
   pagination.value.page = 1;
@@ -653,6 +791,18 @@ const onFilterChange = () => {
 };
 const changePage = (page) => store.setPage(page);
 const changePerPage = ({ page, per_page }) => store.setPerPage(per_page);
+
+const handleQuickFilterStatus = (status) => {
+  filters.value.status = status;
+  pagination.value.page = 1;
+  store.fetchTransfers();
+};
+
+const handleQuickFilterType = (type) => {
+  filters.value.type = type;
+  pagination.value.page = 1;
+  store.fetchTransfers();
+};
 
 const openProcessModal = (item) => {
   if (isAwaitingAdmin(item)) {
@@ -671,6 +821,7 @@ const openRejectModal = (item) => {
 const onModalSuccess = () => {
   modalType.value = "";
   store.fetchTransfers();
+  store.fetchSummary(true);
 };
 
 // --- Preview Logic ---
@@ -804,5 +955,6 @@ const downloadProofFile = async () => {
 
 onMounted(() => {
   store.fetchTransfers();
+  store.fetchSummary();
 });
 </script>

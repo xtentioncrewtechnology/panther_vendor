@@ -215,14 +215,10 @@
           <div class="flex flex-col gap-1">
             <label class="text-xs font-semibold text-primary-text">
               Proof attachment
-              <span v-if="!isDeposit(activeTransfer)" class="text-primary-red">*</span>
+              <span class="text-secondary-text font-normal">(Optional)</span>
             </label>
             <p class="text-[11px] text-secondary-text">
-              {{
-                isDeposit(activeTransfer)
-                  ? "Optional · PNG, JPG, GIF, WEBP, or PDF · max 10 MB"
-                  : "Required · PNG, JPG, GIF, WEBP, or PDF · max 10 MB"
-              }}
+              Optional · PNG, JPG, GIF, WEBP, or PDF · max 10 MB
             </p>
 
             <div
@@ -525,7 +521,7 @@ const rejectForm = reactive({
 const processModalSubtitle = computed(() => {
   if (!activeTransfer.value) return "";
   if (!isDeposit(activeTransfer.value)) {
-    return "Add UTR and proof attachment to finish this payout";
+    return "Add UTR to finish this payout (attachment optional)";
   }
   if (depositAmountChanged.value) {
     return "Amount changed — save to send this deposit to admin for approval before credit";
@@ -550,8 +546,14 @@ const cancelEditAmount = () => {
 };
 
 const originalDepositAmount = computed(() => {
+  if (amountBaseline.value != null) return amountBaseline.value;
   if (!activeTransfer.value) return 0;
-  return activeTransfer.value.payment_request?.amount || 0;
+  return (
+    activeTransfer.value.payment_request?.paid_amount ??
+    activeTransfer.value.payment_request?.amount ??
+    activeTransfer.value.amount ??
+    0
+  );
 });
 
 const depositAmountChanged = computed(() => {
@@ -571,19 +573,21 @@ const isFormValid = computed(() => {
     const amount = Number(processForm.amount_inr);
     const hasAmount = Number.isFinite(amount) && amount > 0;
     const hasUtr =
-      !!processForm.proof_url?.trim() || !!activeTransfer.value?.proof_url;
+      !!processForm.proof_url?.trim() ||
+      !!activeTransfer.value?.proof_url ||
+      !!activeTransfer.value?.payment_request?.txid ||
+      !!activeTransfer.value?.payment_request?.bank?.utr;
     return hasAmount && hasUtr;
   }
 
-  const hasUtr = !!processForm.proof_url?.trim();
-  const hasFile =
-    !!processForm.proof || !!activeTransfer.value?.proof_attachment_url;
-  return hasUtr && hasFile;
+  const hasUtr =
+    !!processForm.proof_url?.trim() || !!activeTransfer.value?.proof_url;
+  return hasUtr;
 });
 
 const submitDisabledReason = computed(() => {
   if (!activeTransfer.value) return "";
-  if (isSubmitting.value) return "";
+  if (isSubmitting.value) return "Submitting...";
   if (depositAmountChanged.value) {
     return "Amount changed — save draft for admin approval first";
   }
@@ -597,12 +601,9 @@ const submitDisabledReason = computed(() => {
     return "Enter UTR to confirm";
   }
 
-  const hasUtr = !!processForm.proof_url?.trim();
-  const hasFile =
-    !!processForm.proof || !!activeTransfer.value?.proof_attachment_url;
-  if (!hasUtr && !hasFile) return "Enter UTR and attach proof";
+  const hasUtr =
+    !!processForm.proof_url?.trim() || !!activeTransfer.value?.proof_url;
   if (!hasUtr) return "Enter UTR / remittance";
-  if (!hasFile) return "Attach a proof file";
   return "";
 });
 
@@ -689,21 +690,31 @@ const onDrop = (e) => {
 };
 
 // Initialize form when opened
-watch(() => props.type, (newType) => {
-  if (newType === 'process' && activeTransfer.value) {
-    const item = activeTransfer.value;
-    processForm.proof_url = item.proof_url || "";
-    processForm.vendor_note = item.vendor_note || "";
-    clearProofFile();
-    const paid = item.payment_request?.paid_amount;
-    processForm.amount_inr = paid != null ? String(paid) : "";
-    amountBaseline.value = paid != null ? Number(paid) : null;
-    isEditingAmount.value = false;
-    isDragging.value = false;
-  } else if (newType === 'reject' && activeTransfer.value) {
-    rejectForm.rejection_reason = "";
-  }
-});
+watch(
+  [() => props.type, () => props.transfer],
+  ([newType, item]) => {
+    if (newType === "process" && item) {
+      processForm.proof_url =
+        item.proof_url ||
+        item.payment_request?.bank?.utr ||
+        item.payment_request?.txid ||
+        "";
+      processForm.vendor_note = item.vendor_note || "";
+      clearProofFile();
+      const paid =
+        item.payment_request?.paid_amount ??
+        item.payment_request?.amount ??
+        item.amount;
+      processForm.amount_inr = paid != null ? String(paid) : "";
+      amountBaseline.value = paid != null ? Number(paid) : null;
+      isEditingAmount.value = false;
+      isDragging.value = false;
+    } else if (newType === "reject" && item) {
+      rejectForm.rejection_reason = "";
+    }
+  },
+  { immediate: true }
+);
 
 const apiErrorMessage = (err, fallback) => {
   return (
@@ -792,8 +803,14 @@ const submitTransfer = () => {
   isSubmitting.value = true;
   const formData = new FormData();
   
-  if (processForm.proof_url?.trim()) {
-    formData.append("proof_url", processForm.proof_url.trim());
+  const utr =
+    processForm.proof_url?.trim() ||
+    activeTransfer.value?.proof_url ||
+    activeTransfer.value?.payment_request?.txid ||
+    activeTransfer.value?.payment_request?.bank?.utr ||
+    "";
+  if (utr) {
+    formData.append("proof_url", utr);
   }
   if (processForm.vendor_note) {
     formData.append("vendor_note", processForm.vendor_note);

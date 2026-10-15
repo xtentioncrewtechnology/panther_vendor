@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import apiRequest from "@/api/request";
 import urls from "@/api/urls";
 import { useSnackbarStore } from "@/stores/snackbar";
@@ -101,15 +101,64 @@ export const useVendorTransfersStore = defineStore("vendorTransfers", () => {
     fetchTransfers();
   };
 
+  // --- Vendor KPI Summary State ---
+  const summary = ref(null);
+  const summaryLoading = ref(false);
+  const summaryError = ref(false);
+
+  const wallets = computed(() => summary.value?.wallets || null);
+  const transfersKpi = computed(() => summary.value?.transfers || null);
+  const scope = computed(() => summary.value?.scope || "assigned");
+
+  const fetchSummary = (force = false) => {
+    if (summaryLoading.value && !force) return Promise.resolve();
+
+    summaryLoading.value = true;
+    summaryError.value = false;
+
+    return new Promise((resolve, reject) => {
+      const successHandler = (res) => {
+        if (res?.status === "success" || res?.data) {
+          summary.value = res.data || res;
+        }
+        resolve(res);
+      };
+
+      const failureHandler = (err) => {
+        console.error("Failed to fetch vendor summary", err);
+        summaryError.value = true;
+        reject(err);
+      };
+
+      const finallyHandler = () => {
+        summaryLoading.value = false;
+      };
+
+      apiRequest("get", urls.vendor.summary, {
+        isTokenRequired: true,
+        onSuccess: successHandler,
+        onFailure: failureHandler,
+        onFinally: finallyHandler,
+      });
+    });
+  };
+
   return {
     transfers,
     loading,
     fetchError,
     filters,
     pagination,
+    summary,
+    summaryLoading,
+    summaryError,
+    wallets,
+    transfersKpi,
+    scope,
     fetchTransfers,
+    fetchSummary,
     clearFilters,
     setPage,
-    setPerPage
+    setPerPage,
   };
 });

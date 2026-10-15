@@ -73,11 +73,20 @@ import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useThemeStore } from "@/stores/theme";
 import { useProfileStore } from "@/stores/profile";
+import { useVendorTransfersStore } from "@/stores/vendor-transfers";
 
 const router = useRouter();
 const route = useRoute();
 const themeStore = useThemeStore();
 const profile = useProfileStore();
+const transfersStore = useVendorTransfersStore();
+
+const formatMoney = (value) => {
+  if (value === null || value === undefined || value === "") return "₹0.00";
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const pageTitle = computed(() => {
   if (route.meta?.title) return route.meta.title;
