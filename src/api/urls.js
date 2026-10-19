@@ -33,9 +33,9 @@ const urls = {
   vendor: {
     summary: '/vendor/summary',
     wallets: {
-      balances: (paymentMethodId) => `/vendor/wallets/${paymentMethodId}/balances`,
-      transactions: (paymentMethodId) => `/vendor/wallets/${paymentMethodId}/transactions`,
-      credit: (paymentMethodId) => `/vendor/wallets/${paymentMethodId}/credit`,
+      balances: (userId) => `/vendor/wallets/${userId}/balances`,
+      transactions: (userId) => `/vendor/wallets/${userId}/transactions`,
+      credit: (userId) => `/vendor/wallets/${userId}/credit`,
     },
   },
   vendorTransfers: {

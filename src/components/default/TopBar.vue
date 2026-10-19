@@ -91,6 +91,7 @@ const formatMoney = (value) => {
 const pageTitle = computed(() => {
   if (route.meta?.title) return route.meta.title;
   if (route.name === "VendorTransfers") return "Vendor Queue";
+  if (route.name === "VendorWalletTransactions") return "Wallet Transactions";
   if (route.name === "Profile") return "Profile Settings";
   return route.name || "App";
 });

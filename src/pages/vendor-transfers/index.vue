@@ -1,5 +1,39 @@
 <template>
   <div class="flex flex-col h-full gap-3">
+    <!-- Top Navigation Tabs (Transfers Queue vs Wallet Transactions) -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <div class="flex items-center gap-1.5 p-1 rounded-xl bg-card-background border border-primary-border shadow-2xs w-full sm:w-auto">
+        <div
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-btn-text-primary shadow-xs cursor-default"
+        >
+          <span class="material-symbols-outlined text-[16px]">receipt_long</span>
+          <span>Transfers Queue</span>
+          <span
+            v-if="pagination.total > 0"
+            class="ml-1 px-1.5 py-0.2 rounded-full bg-btn-text-primary/15 text-[10px] font-bold"
+          >
+            {{ pagination.total }}
+          </span>
+        </div>
+        <router-link
+          to="/vendor/wallet-transactions"
+          class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-secondary-text hover:text-primary-text hover:bg-background/80 transition-colors"
+        >
+          <span class="material-symbols-outlined text-[16px]">account_balance_wallet</span>
+          <span>Wallet Transactions</span>
+        </router-link>
+      </div>
+
+      <router-link
+        to="/vendor/wallet-transactions"
+        class="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-xl border border-primary-border bg-card-background text-xs font-semibold text-primary-text hover:bg-primary/5 hover:border-primary/50 transition-colors shadow-2xs shrink-0"
+      >
+        <span class="material-symbols-outlined text-[16px] text-primary">account_balance_wallet</span>
+        <span>View Wallet Transactions</span>
+        <span class="material-symbols-outlined text-[14px] text-secondary-text">arrow_forward</span>
+      </router-link>
+    </div>
+
     <!-- Vendor KPI Summary -->
     <VendorKpiSummary
       :summary="summary"
@@ -10,8 +44,14 @@
 
     <!-- Top Controls -->
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div class="flex items-center">
-        <!-- Optional: Left aligned controls if needed in future -->
+      <div class="flex items-center gap-2">
+        <router-link
+          to="/vendor/wallet-transactions"
+          class="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary-border bg-card-background text-xs font-medium text-secondary-text hover:text-primary-text"
+        >
+          <span class="material-symbols-outlined text-[16px] text-primary">account_balance_wallet</span>
+          <span>Transactions</span>
+        </router-link>
       </div>
 
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">

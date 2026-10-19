@@ -17,6 +17,23 @@ const routes = [
         path: "vendor/transfers",
         name: "VendorTransfers",
         component: () => import("@/pages/vendor-transfers/index.vue"),
+        meta: {
+          title: "Vendor Queue",
+          section: "Operations",
+        },
+      },
+      {
+        path: "vendor/wallet-transactions",
+        name: "VendorWalletTransactions",
+        component: () => import("@/pages/vendor-wallets/transactions.vue"),
+        meta: {
+          title: "Wallet Transactions",
+          section: "Finance",
+        },
+      },
+      {
+        path: "vendor/wallets/transactions",
+        redirect: "/vendor/wallet-transactions",
       },
       {
         path: "",

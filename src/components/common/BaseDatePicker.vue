@@ -848,7 +848,7 @@ watch(
       :class="triggerClassList"
     >
       <div class="flex items-center gap-2 truncate min-w-0">
-        <span class="material-symbols-outlined"  class="flex-shrink-0 text-secondary-text">calendar_today</span>
+        <span class="material-symbols-outlined flex-shrink-0 text-secondary-text">calendar_today</span>
         <span
           :class="[
             'truncate text-sm',

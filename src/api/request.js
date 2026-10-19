@@ -10,7 +10,8 @@ const getDefaultApiHost = () => {
   return "";
 };
 
-const getBaseURL = () => {
+const getBaseURL = (requestUrl = "") => {
+  let base = "";
   // Allow developer override from dev-login
   const customUrl = localStorage.getItem("custom_base_url");
   if (customUrl) {
@@ -20,13 +21,23 @@ const getBaseURL = () => {
     } else if (!url.endsWith("/")) {
       url = `${url}/`;
     }
-    return url;
+    base = url;
+  } else {
+    // Uses Vercel rewrite to show this domain in requests, proxying to admin.panthercapitals.com behind the scenes
+    base = import.meta.env.PROD 
+      ? "https://vender-portal-payment.vercel.app/api/admin/" 
+      : "https://admin.panthercapitals.com/admin/";
   }
 
-  // Uses Vercel rewrite to show this domain in requests, proxying to admin.panthercapitals.com behind the scenes
-  return import.meta.env.PROD 
-    ? "https://vender-portal-payment.vercel.app/api/admin/" 
-    : "https://admin.panthercapitals.com/admin/";
+  // Remove /admin only for vendor wallets endpoints (/vendor/wallets/*)
+  const isVendorNonAdminUrl =
+    typeof requestUrl === "string" && requestUrl.startsWith("/vendor/wallets");
+
+  if (isVendorNonAdminUrl) {
+    return base.replace(/\/admin\/?$/, "/");
+  }
+
+  return base;
 };
 
 const DEFAULT_TIMEOUT = 2 * 60 * 1000;
@@ -200,6 +211,7 @@ const apiRequest = (
     signal = null,
     timeout = null,
     cancelPrevious = false,
+    baseURL = null,
   } = {}
 ) => {
   if (!ALLOWED_METHODS.includes(method)) {
@@ -233,7 +245,7 @@ const apiRequest = (
     onUploadProgress,
     onDownloadProgress,
     isTokenRequired,
-    baseURL: getBaseURL(),
+    baseURL: baseURL || getBaseURL(url),
     signal: abortController?.signal || signal,
     ...(timeout != null && { timeout }),
   };

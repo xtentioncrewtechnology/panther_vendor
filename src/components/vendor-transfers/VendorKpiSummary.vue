@@ -186,14 +186,16 @@
     >
       <!-- Card 1: Deposit Balance -->
       <div
-        class="group bg-card-background border border-primary-border/60 rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between hover:border-emerald-500/40 transition-colors shadow-none"
+        class="group bg-card-background border border-primary-border/60 rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between hover:border-emerald-500/40 transition-colors shadow-none cursor-pointer"
+        title="Click to view wallet transactions"
+        @click="goToTransactions"
       >
         <div>
           <div class="flex items-center justify-between gap-1 mb-1 sm:mb-1.5">
             <span class="text-[10px] font-semibold uppercase tracking-wider text-secondary-text truncate">
               Deposit Balance
             </span>
-            <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+            <div class="w-6 h-6 rounded-md bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <span class="material-symbols-outlined text-[15px]">account_balance_wallet</span>
             </div>
           </div>
@@ -201,22 +203,27 @@
             {{ formatMoney(wallets?.total_deposit_balance) }}
           </p>
         </div>
-        <p class="text-[10px] text-secondary-text mt-1 sm:mt-1.5 flex items-center gap-1 truncate">
-          <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-          <span class="truncate">Available for deposits</span>
+        <p class="text-[10px] text-secondary-text mt-1 sm:mt-1.5 flex items-center justify-between gap-1 truncate">
+          <span class="flex items-center gap-1 truncate">
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+            <span class="truncate">Available for deposits</span>
+          </span>
+          <span class="text-primary text-[10px] font-medium shrink-0 group-hover:underline">History &rarr;</span>
         </p>
       </div>
 
       <!-- Card 2: Withdrawal Balance -->
       <div
-        class="group bg-card-background border border-primary-border/60 rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between hover:border-blue-500/40 transition-colors shadow-none"
+        class="group bg-card-background border border-primary-border/60 rounded-xl p-2.5 sm:p-3.5 flex flex-col justify-between hover:border-blue-500/40 transition-colors shadow-none cursor-pointer"
+        title="Click to view wallet transactions"
+        @click="goToTransactions"
       >
         <div>
           <div class="flex items-center justify-between gap-1 mb-1 sm:mb-1.5">
             <span class="text-[10px] font-semibold uppercase tracking-wider text-secondary-text truncate">
               Withdrawal Balance
             </span>
-            <div class="w-6 h-6 rounded-md bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+            <div class="w-6 h-6 rounded-md bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <span class="material-symbols-outlined text-[15px]">payments</span>
             </div>
           </div>
@@ -224,9 +231,12 @@
             {{ formatMoney(wallets?.total_withdrawal_balance) }}
           </p>
         </div>
-        <p class="text-[10px] text-secondary-text mt-1 sm:mt-1.5 flex items-center gap-1 truncate">
-          <span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-          <span class="truncate">Available for payouts</span>
+        <p class="text-[10px] text-secondary-text mt-1 sm:mt-1.5 flex items-center justify-between gap-1 truncate">
+          <span class="flex items-center gap-1 truncate">
+            <span class="inline-block w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+            <span class="truncate">Available for payouts</span>
+          </span>
+          <span class="text-primary text-[10px] font-medium shrink-0 group-hover:underline">History &rarr;</span>
         </p>
       </div>
 
@@ -345,6 +355,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+const goToTransactions = () => {
+  router.push("/vendor/wallet-transactions");
+};
 
 const props = defineProps({
   summary: {

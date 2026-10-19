@@ -25,6 +25,33 @@ export const useProfileStore = defineStore("user", () => {
     return name.charAt(0).toUpperCase();
   });
 
+  const userId = computed(() => {
+    const id =
+      user.value?.id ??
+      user.value?.user_id ??
+      user.value?.user?.id ??
+      user.value?.user?.user_id ??
+      user.value?.data?.id ??
+      localStorage.getItem("user_id");
+    return id ? Number(id) || id : null;
+  });
+
+  const email = computed(() => {
+    return user.value?.email || user.value?.user?.email || "";
+  });
+
+  async function ensureUserId() {
+    if (userId.value) return userId.value;
+    try {
+      const data = await fetchUserProfile();
+      const id = data?.id ?? data?.user_id ?? data?.user?.id ?? data?.user?.user_id ?? localStorage.getItem("user_id");
+      return id ? Number(id) || id : null;
+    } catch {
+      const stored = localStorage.getItem("user_id");
+      return stored ? Number(stored) || stored : null;
+    }
+  }
+
   // ─── Fetch User ────────────────────────────────────
   function fetchUserProfile() {
     loading.value = true;
@@ -154,5 +181,8 @@ export const useProfileStore = defineStore("user", () => {
     displayName,
     roleLabel,
     initials,
+    userId,
+    email,
+    ensureUserId,
   };
 });
